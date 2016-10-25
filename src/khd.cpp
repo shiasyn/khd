@@ -30,6 +30,8 @@ hotkey Modifiers = {};
 long long ModifierTriggerTime;
 double ModifierTriggerTimeout;
 
+bool ModifierTriggerLast;
+
 internal inline void
 Error(const char *Format, ...)
 {
@@ -74,6 +76,8 @@ KeyCallback(CGEventTapProxy Proxy, CGEventType Type, CGEventRef Event, void *Con
         {
             CGEventFlags Flags = CGEventGetFlags(Event);
             CGKeyCode Key = CGEventGetIntegerValueField(Event, kCGKeyboardEventKeycode);
+
+            ModifierTriggerLast = false;
 
             hotkey *Hotkey = NULL;
             if(HotkeyForCGEvent(Flags, Key, &Hotkey, true))

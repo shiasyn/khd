@@ -18,6 +18,8 @@ extern hotkey Modifiers;
 extern long long ModifierTriggerTime;
 extern double ModifierTriggerTimeout;
 
+extern bool ModifierTriggerLast;
+
 internal inline void
 ClockGetTime(long long *Time)
 {
@@ -423,6 +425,7 @@ ModifierPressed(uint32_t Flag)
 {
     AddFlags(&Modifiers, Flag);
     ClockGetTime(&ModifierTriggerTime);
+    ModifierTriggerLast = true;
 }
 
 internal inline void
@@ -430,7 +433,8 @@ ModifierReleased(uint32_t Flag)
 {
     long long Time;
     ClockGetTime(&Time);
-    if(GetTimeDiff(Time, ModifierTriggerTime) < ModifierTriggerTimeout)
+    if(ModifierTriggerLast &&
+       (GetTimeDiff(Time, ModifierTriggerTime) < ModifierTriggerTimeout))
     {
         ExecuteModifierOnlyHotkey(Flag);
     }
