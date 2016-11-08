@@ -7,7 +7,10 @@ EatAllWhiteSpace(tokenizer *Tokenizer)
     while((Tokenizer->At[0]) &&
           (IsWhiteSpace(Tokenizer->At[0])))
     {
-            ++Tokenizer->At;
+        if(IsEndOfLine(Tokenizer->At[0]))
+            ++Tokenizer->Line;
+
+        ++Tokenizer->At;
     }
 }
 
@@ -77,7 +80,11 @@ token GetToken(tokenizer *Tokenizer)
                   (!IsEndOfLine(Tokenizer->At[0])))
             {
                 if(Tokenizer->At[0] == '\\')
+                {
                     ++Tokenizer->At;
+                    if(IsEndOfLine(Tokenizer->At[0]))
+                        ++Tokenizer->Line;
+                }
 
                 ++Tokenizer->At;
             }

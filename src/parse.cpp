@@ -260,7 +260,7 @@ ParseCommand(tokenizer *Tokenizer, hotkey *Hotkey)
         } break;
         default:
         {
-            Error("Expected token of type 'Token_Command' after symbols!\n");
+            Error("Line#%d: Expected token of type 'Token_Command' after symbols!\n", Tokenizer->Line);
         } break;
     }
 }
@@ -346,7 +346,7 @@ ParseKeyLiteral(tokenizer *Tokenizer, token *Token, hotkey *Hotkey, bool ExpectC
     }
     else if(!Result)
     {
-        Error("Invalid format for key literal: %.*s\n", Token->Length, Token->Text);
+        Error("Line#%d: Invalid format for key literal: %.*s\n", Tokenizer->Line, Token->Length, Token->Text);
     }
 
     free(Temp);
@@ -385,7 +385,7 @@ ParseKeySym(tokenizer *Tokenizer, token *Token, hotkey *Hotkey, bool ExpectComma
             }
             else
             {
-                Error("Invalid format for keysym: %.*s\n", Symbol.Length, Symbol.Text);
+                Error("Line#%d: Invalid format for keysym: %.*s\n", Tokenizer->Line, Symbol.Length, Symbol.Text);
             }
         } break;
     }
@@ -579,7 +579,7 @@ void ParseKeySym(char *KeySym, hotkey *Hotkey)
 
 void ParseConfig(char *Contents)
 {
-    tokenizer Tokenizer = { Contents };
+    tokenizer Tokenizer = { Contents, 0 };
     bool Parsing = true;
     while(Parsing)
     {
@@ -622,6 +622,7 @@ void ParseConfig(char *Contents)
         }
     }
 
+    printf("Total lines#%d\n", Tokenizer.Line);
     free(Contents);
 }
 

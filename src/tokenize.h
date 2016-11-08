@@ -32,6 +32,7 @@ struct token
 struct tokenizer
 {
     char *At;
+    unsigned int Line;
 };
 
 inline bool
