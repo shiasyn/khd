@@ -9,16 +9,12 @@
 #define local_persist static
 #define CLOCK_PRECISION 1E-9
 
+extern modifier_state ModifierState;
 extern mode DefaultBindingMode;
 extern mode *ActiveBindingMode;
 extern uint32_t Compatibility;
 extern char *FocusedApp;
 extern pthread_mutex_t Lock;
-extern hotkey Modifiers;
-extern long long ModifierTriggerTime;
-extern double ModifierTriggerTimeout;
-
-extern bool ModifierTriggerLast;
 
 internal inline void
 ClockGetTime(long long *Time)
@@ -61,7 +57,6 @@ UpdatePrefixTimer()
         }
     });
 }
-
 
 internal void
 Execute(char *Command)
@@ -374,45 +369,45 @@ CreateHotkeyFromCGEvent(CGEventFlags Flags, CGKeyCode Key)
 }
 
 internal CGEventFlags
-CreateCGEventFlagsFromHotkey(hotkey *Hotkey)
+CreateCGEventFlagsFromHotkeyFlags(uint32_t HotkeyFlags)
 {
-    CGEventFlags Flags = 0;
+    CGEventFlags EventFlags = 0;
 
-    if(HasFlags(Hotkey, Hotkey_Flag_Cmd))
-        Flags |= Event_Mask_Cmd;
-    else if(HasFlags(Hotkey, Hotkey_Flag_LCmd))
-        Flags |= Event_Mask_LCmd | Event_Mask_Cmd;
-    else if(HasFlags(Hotkey, Hotkey_Flag_RCmd))
-        Flags |= Event_Mask_RCmd | Event_Mask_Cmd;
+    if(HotkeyFlags & Hotkey_Flag_Cmd)
+        EventFlags |= Event_Mask_Cmd;
+    else if(HotkeyFlags & Hotkey_Flag_LCmd)
+        EventFlags |= Event_Mask_LCmd | Event_Mask_Cmd;
+    else if(HotkeyFlags & Hotkey_Flag_RCmd)
+        EventFlags |= Event_Mask_RCmd | Event_Mask_Cmd;
 
-    if(HasFlags(Hotkey, Hotkey_Flag_Shift))
-        Flags |= Event_Mask_Shift;
-    else if(HasFlags(Hotkey, Hotkey_Flag_LShift))
-        Flags |= Event_Mask_LShift | Event_Mask_Shift;
-    else if(HasFlags(Hotkey, Hotkey_Flag_RShift))
-        Flags |= Event_Mask_RShift | Event_Mask_Shift;
+    if(HotkeyFlags & Hotkey_Flag_Shift)
+        EventFlags |= Event_Mask_Shift;
+    else if(HotkeyFlags & Hotkey_Flag_LShift)
+        EventFlags |= Event_Mask_LShift | Event_Mask_Shift;
+    else if(HotkeyFlags & Hotkey_Flag_RShift)
+        EventFlags |= Event_Mask_RShift | Event_Mask_Shift;
 
-    if(HasFlags(Hotkey, Hotkey_Flag_Alt))
-        Flags |= Event_Mask_Alt;
-    else if(HasFlags(Hotkey, Hotkey_Flag_LAlt))
-        Flags |= Event_Mask_LAlt | Event_Mask_Alt;
-    else if(HasFlags(Hotkey, Hotkey_Flag_RAlt))
-        Flags |= Event_Mask_RAlt | Event_Mask_Alt;
+    if(HotkeyFlags & Hotkey_Flag_Alt)
+        EventFlags |= Event_Mask_Alt;
+    else if(HotkeyFlags & Hotkey_Flag_LAlt)
+        EventFlags |= Event_Mask_LAlt | Event_Mask_Alt;
+    else if(HotkeyFlags & Hotkey_Flag_RAlt)
+        EventFlags |= Event_Mask_RAlt | Event_Mask_Alt;
 
-    if(HasFlags(Hotkey, Hotkey_Flag_Control))
-        Flags |= Event_Mask_Control;
-    else if(HasFlags(Hotkey, Hotkey_Flag_LControl))
-        Flags |= Event_Mask_LControl | Event_Mask_Control;
-    else if(HasFlags(Hotkey, Hotkey_Flag_RControl))
-        Flags |= Event_Mask_RControl | Event_Mask_Control;
+    if(HotkeyFlags & Hotkey_Flag_Control)
+        EventFlags |= Event_Mask_Control;
+    else if(HotkeyFlags & Hotkey_Flag_LControl)
+        EventFlags |= Event_Mask_LControl | Event_Mask_Control;
+    else if(HotkeyFlags & Hotkey_Flag_RControl)
+        EventFlags |= Event_Mask_RControl | Event_Mask_Control;
 
-    return Flags;
+    return EventFlags;
 }
 
 internal inline void
-ExecuteModifierOnlyHotkey(uint32_t Flag)
+ExecuteModifierOnlyHotkey()
 {
-    CGEventFlags EventFlags = CreateCGEventFlagsFromHotkey(&Modifiers);
+    CGEventFlags EventFlags = CreateCGEventFlagsFromHotkeyFlags(ModifierState.Flags);
     hotkey *Hotkey = NULL;
     if(HotkeyForCGEvent(EventFlags, 0, &Hotkey, false))
     {
@@ -423,9 +418,9 @@ ExecuteModifierOnlyHotkey(uint32_t Flag)
 internal inline void
 ModifierPressed(uint32_t Flag)
 {
-    AddFlags(&Modifiers, Flag);
-    ClockGetTime(&ModifierTriggerTime);
-    ModifierTriggerLast = true;
+    ModifierState.Flags |= Flag;
+    ClockGetTime(&ModifierState.Time);
+    ModifierState.Valid = true;
 }
 
 internal inline void
@@ -433,13 +428,14 @@ ModifierReleased(uint32_t Flag)
 {
     long long Time;
     ClockGetTime(&Time);
-    if(ModifierTriggerLast &&
-       (GetTimeDiff(Time, ModifierTriggerTime) < ModifierTriggerTimeout))
+
+    if((GetTimeDiff(Time, ModifierState.Time) < ModifierState.Timeout) &&
+       (ModifierState.Valid))
     {
-        ExecuteModifierOnlyHotkey(Flag);
+        ExecuteModifierOnlyHotkey();
     }
 
-    ClearFlags(&Modifiers, Flag);
+    ModifierState.Flags &= ~Flag;
 }
 
 void RefreshModifierState(CGEventFlags Flags, CGKeyCode Key)
@@ -572,7 +568,7 @@ void SendKeyPress(char *KeySym)
 {
     hotkey Hotkey = {};
     ParseKeySym(KeySym, &Hotkey);
-    CGEventFlags Flags = CreateCGEventFlagsFromHotkey(&Hotkey);
+    CGEventFlags Flags = CreateCGEventFlagsFromHotkeyFlags(Hotkey.Flags);
 
     CGEventRef KeyDownEvent = CGEventCreateKeyboardEvent(NULL, Hotkey.Key, true);
     CGEventSetFlags(KeyDownEvent, Flags);

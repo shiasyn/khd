@@ -91,6 +91,15 @@ struct hotkey
     hotkey *Next;
 };
 
+struct modifier_state
+{
+    uint32_t Flags;
+
+    long long Time;
+    double Timeout;
+    bool Valid;
+};
+
 inline void
 AddFlags(hotkey *Hotkey, uint32_t Flag)
 {

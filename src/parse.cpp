@@ -9,11 +9,11 @@
 #include <stdarg.h>
 
 #define internal static
+extern modifier_state ModifierState;
 extern mode DefaultBindingMode;
 extern mode *ActiveBindingMode;
 extern char *ConfigFile;
 extern uint32_t Compatibility;
-extern double ModifierTriggerTimeout;
 
 internal void
 Error(const char *Format, ...)
@@ -484,7 +484,7 @@ ParseKhdModTriggerTimeout(tokenizer *Tokenizer)
         case Token_Digit:
         {
             char *Temp = AllocAndCopyString(Token.Text, Token.Length);
-            ModifierTriggerTimeout = StringToDouble(Temp);
+            ModifierState.Timeout = StringToDouble(Temp);
             free(Temp);
         } break;
         default:

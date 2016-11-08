@@ -19,6 +19,7 @@ extern "C" bool CGSIsSecureEventInputSet();
 internal CFMachPortRef KhdEventTap;
 internal const char *KhdVersion = "1.1.0";
 
+modifier_state ModifierState = {};
 mode DefaultBindingMode = {};
 mode *ActiveBindingMode = NULL;
 uint32_t Compatibility = 0;
@@ -26,11 +27,6 @@ pthread_mutex_t Lock;
 char *ConfigFile;
 char *FocusedApp;
 
-hotkey Modifiers = {};
-long long ModifierTriggerTime;
-double ModifierTriggerTimeout;
-
-bool ModifierTriggerLast;
 
 internal inline void
 Error(const char *Format, ...)
@@ -76,8 +72,7 @@ KeyCallback(CGEventTapProxy Proxy, CGEventType Type, CGEventRef Event, void *Con
         {
             CGEventFlags Flags = CGEventGetFlags(Event);
             CGKeyCode Key = CGEventGetIntegerValueField(Event, kCGKeyboardEventKeycode);
-
-            ModifierTriggerLast = false;
+            ModifierState.Valid = false;
 
             hotkey *Hotkey = NULL;
             if(HotkeyForCGEvent(Flags, Key, &Hotkey, true))
@@ -141,7 +136,7 @@ Init()
 
     DefaultBindingMode.Name = strdup("default");
     ActiveBindingMode = &DefaultBindingMode;
-    ModifierTriggerTimeout = 0.1;
+    ModifierState.Timeout = 0.1;
 
     printf("Khd: Using config '%s'\n", ConfigFile);
     char *Contents = ReadFile(ConfigFile);
