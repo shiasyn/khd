@@ -25,7 +25,7 @@ struct mac_os_version
 };
 
 internal CFMachPortRef KhdEventTap;
-internal const char *KhdVersion = "1.1.1";
+internal const char *KhdVersion = "1.1.2";
 
 modifier_state ModifierState = {};
 mode DefaultBindingMode = {};
