@@ -243,7 +243,7 @@ CheckPrivileges()
     return Result;
 }
 
-bool IsMacOSSierra()
+bool IsMacOSSierraOrNewer()
 {
     local_persist mac_os_version MacOSVersion = {};
     if((MacOSVersion.Major == 0) &&
@@ -263,7 +263,7 @@ bool IsMacOSSierra()
     }
 
     bool Result = ((MacOSVersion.Major == 10) &&
-                   (MacOSVersion.Minor == 12));
+                   (MacOSVersion.Minor >= 12));
     return Result;
 }
 

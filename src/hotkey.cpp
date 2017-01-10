@@ -564,13 +564,13 @@ void SendKeySequence(const char *Sequence)
     CFRelease(SequenceRef);
 }
 
-bool IsMacOSSierra();
+bool IsMacOSSierraOrNewer()
 internal inline void
 CreateAndPostKeyEvent(CGEventFlags Flags, CGKeyCode Key, bool Pressed)
 {
     CGEventRef KeyEvent = CGEventCreateKeyboardEvent(NULL, Key, Pressed);
 
-    if(IsMacOSSierra())
+    if(IsMacOSSierraOrNewer())
     {
         Flags |= CGEventGetFlags(KeyEvent);
     }
