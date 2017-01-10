@@ -564,20 +564,106 @@ void SendKeySequence(const char *Sequence)
     CFRelease(SequenceRef);
 }
 
+internal inline void
+CreateAndPostKeyEvent(uint32_t Flags, CGKeyCode Key, bool Pressed)
+{
+    CGEventRef KeyEvent = CGEventCreateKeyboardEvent(NULL, Key, Pressed);
+
+    CGEventSetFlags(KeyEvent, Flags);
+    CGEventPost(kCGHIDEventTap, KeyEvent);
+
+    CFRelease(KeyEvent);
+    usleep(10000);
+}
+
+internal inline void
+CreateAndPostKeyEvent(CGKeyCode Key, bool Pressed)
+{
+    CreateAndPostKeyEvent(0, Key, Pressed);
+}
+
+/* NOTE(koekeishiya): Simply setting the modifier flag for an event is apparently
+ * no longer enough when using CGPostEvent on MacOS Sierra. This function performs
+ * a key-pressed event for each active modifier. */
+internal void
+PressModifiers(uint32_t HotkeyFlags)
+{
+    if(HotkeyFlags & Hotkey_Flag_Cmd)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Cmd, true);
+    else if(HotkeyFlags & Hotkey_Flag_LCmd)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Cmd, true);
+    else if(HotkeyFlags & Hotkey_Flag_RCmd)
+        CreateAndPostKeyEvent(Modifier_Keycode_Right_Cmd, true);
+
+    if(HotkeyFlags & Hotkey_Flag_Shift)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Shift, true);
+    else if(HotkeyFlags & Hotkey_Flag_LShift)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Shift, true);
+    else if(HotkeyFlags & Hotkey_Flag_RShift)
+        CreateAndPostKeyEvent(Modifier_Keycode_Right_Shift, true);
+
+    if(HotkeyFlags & Hotkey_Flag_Alt)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Alt, true);
+    else if(HotkeyFlags & Hotkey_Flag_LAlt)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Alt, true);
+    else if(HotkeyFlags & Hotkey_Flag_RAlt)
+        CreateAndPostKeyEvent(Modifier_Keycode_Right_Alt, true);
+
+    if(HotkeyFlags & Hotkey_Flag_Control)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Ctrl, true);
+    else if(HotkeyFlags & Hotkey_Flag_LControl)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Ctrl, true);
+    else if(HotkeyFlags & Hotkey_Flag_RControl)
+        CreateAndPostKeyEvent(Modifier_Keycode_Right_Ctrl, true);
+}
+
+/* NOTE(koekeishiya): Simply setting the modifier flag for an event is apparently
+ * no longer enough when using CGPostEvent on MacOS Sierra. This function performs
+ * a key-release event for each active modifier. */
+internal void
+ReleaseModifiers(uint32_t HotkeyFlags)
+{
+    if(HotkeyFlags & Hotkey_Flag_Cmd)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Cmd, false);
+    else if(HotkeyFlags & Hotkey_Flag_LCmd)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Cmd, false);
+    else if(HotkeyFlags & Hotkey_Flag_RCmd)
+        CreateAndPostKeyEvent(Modifier_Keycode_Right_Cmd, false);
+
+    if(HotkeyFlags & Hotkey_Flag_Shift)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Shift, false);
+    else if(HotkeyFlags & Hotkey_Flag_LShift)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Shift, false);
+    else if(HotkeyFlags & Hotkey_Flag_RShift)
+        CreateAndPostKeyEvent(Modifier_Keycode_Right_Shift, false);
+
+    if(HotkeyFlags & Hotkey_Flag_Alt)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Alt, false);
+    else if(HotkeyFlags & Hotkey_Flag_LAlt)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Alt, false);
+    else if(HotkeyFlags & Hotkey_Flag_RAlt)
+        CreateAndPostKeyEvent(Modifier_Keycode_Right_Alt, false);
+
+    if(HotkeyFlags & Hotkey_Flag_Control)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Ctrl, false);
+    else if(HotkeyFlags & Hotkey_Flag_LControl)
+        CreateAndPostKeyEvent(Modifier_Keycode_Left_Ctrl, false);
+    else if(HotkeyFlags & Hotkey_Flag_RControl)
+        CreateAndPostKeyEvent(Modifier_Keycode_Right_Ctrl, false);
+}
+
 void SendKeyPress(char *KeySym)
 {
     hotkey Hotkey = {};
     ParseKeySym(KeySym, &Hotkey);
     CGEventFlags Flags = CreateCGEventFlagsFromHotkeyFlags(Hotkey.Flags);
 
-    CGEventRef KeyDownEvent = CGEventCreateKeyboardEvent(NULL, Hotkey.Key, true);
-    CGEventSetFlags(KeyDownEvent, Flags);
-    CGEventPost(kCGHIDEventTap, KeyDownEvent);
+    // TODO(koekeishiya): Not necessary on El Capitan! Is this a Sierra thing ?
+    PressModifiers(Hotkey.Flags);
 
-    CGEventRef KeyUpEvent = CGEventCreateKeyboardEvent(NULL, Hotkey.Key, false);
-    CGEventSetFlags(KeyUpEvent, Flags);
-    CGEventPost(kCGHIDEventTap, KeyUpEvent);
+    CreateAndPostKeyEvent(Flags, Hotkey.Key, true);
+    CreateAndPostKeyEvent(Flags, Hotkey.Key, false);
 
-    CFRelease(KeyDownEvent);
-    CFRelease(KeyUpEvent);
+    // TODO(koekeishiya): Not necessary on El Capitan! Is this a Sierra thing ?
+    ReleaseModifiers(Hotkey.Flags);
 }
