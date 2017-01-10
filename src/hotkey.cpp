@@ -564,7 +564,7 @@ void SendKeySequence(const char *Sequence)
     CFRelease(SequenceRef);
 }
 
-bool IsMacOSSierraOrNewer()
+bool IsMacOSSierraOrNewer();
 internal inline void
 CreateAndPostKeyEvent(CGEventFlags Flags, CGKeyCode Key, bool Pressed)
 {
