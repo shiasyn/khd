@@ -13,8 +13,16 @@
 #include "sharedworkspace.h"
 
 #define internal static
+#define local_persist static
 extern "C" bool CGSIsSecureEventInputSet();
 #define IsSecureKeyboardEntryEnabled CGSIsSecureEventInputSet
+
+struct mac_os_version
+{
+    int32_t Major;
+    int32_t Minor;
+    int32_t BugFix;
+};
 
 internal CFMachPortRef KhdEventTap;
 internal const char *KhdVersion = "1.1.1";
@@ -232,6 +240,30 @@ CheckPrivileges()
     Result = AXIsProcessTrustedWithOptions(Options);
     CFRelease(Options);
 
+    return Result;
+}
+
+bool IsMacOSSierra()
+{
+    local_persist mac_os_version MacOSVersion = {};
+    if((MacOSVersion.Major == 0) &&
+       (MacOSVersion.Minor == 0) &&
+       (MacOSVersion.BugFix == 0))
+    {
+        /* NOTE(koekeishiya): This function was deprecated in MacOS 10.8,
+         * but there is no documentation regarding a proper replacement. */
+        Gestalt(gestaltSystemVersionMajor, &MacOSVersion.Major);
+        Gestalt(gestaltSystemVersionMinor, &MacOSVersion.Minor);
+        Gestalt(gestaltSystemVersionBugFix, &MacOSVersion.BugFix);
+        /* printf("%s %d.%d.%d\n",
+                "System: MacOS",
+                MacOSVersion.Major,
+                MacOSVersion.Minor,
+                MacOSVersion.BugFix); */
+    }
+
+    bool Result = ((MacOSVersion.Major == 10) &&
+                   (MacOSVersion.Minor == 12));
     return Result;
 }
 
