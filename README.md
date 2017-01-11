@@ -14,7 +14,7 @@ See [#1](https://github.com/koekeishiya/khd/issues/1) for information regarding 
 
 A codesigned binary release is available through Homebrew
 
-      brew install koekeishiya/homebrew-formulae/khd
+      brew install koekeishiya/formulae/khd
 
 Manage *Khd* using brew services
 
