@@ -1,6 +1,6 @@
 FRAMEWORKS     = -framework Carbon -framework Cocoa
 BUILD_PATH     = ./bin
-BUILD_FLAGS    = -Wall -Wno-deprecated -g
+BUILD_FLAGS    = -Wall -g
 KHD_SRC        = ./src/khd.cpp ./src/hotkey.cpp ./src/parse.cpp\
                  ./src/tokenize.cpp ./src/locale.cpp ./src/daemon.cpp\
                  ./src/sharedworkspace.mm
@@ -10,7 +10,7 @@ all: $(BINS)
 
 .PHONY: all clean install
 
-install: BUILD_FLAGS=-O2 -Wno-deprecated
+install: BUILD_FLAGS=-O2
 install: clean $(BINS)
 
 $(BINS): | $(BUILD_PATH)
