@@ -564,17 +564,34 @@ void SendKeySequence(const char *Sequence)
     CFRelease(SequenceRef);
 }
 
-bool IsMacOSSierraOrNewer();
+internal inline CGEventFlags
+ClearModifierFlags(CGEventFlags Flags)
+{
+    Flags &= ~Event_Mask_Alt;
+    Flags &= ~Event_Mask_LAlt;
+    Flags &= ~Event_Mask_RAlt;
+
+    Flags &= ~Event_Mask_Shift;
+    Flags &= ~Event_Mask_LShift;
+    Flags &= ~Event_Mask_RShift;
+
+    Flags &= ~Event_Mask_Cmd;
+    Flags &= ~Event_Mask_LCmd;
+    Flags &= ~Event_Mask_RCmd;
+
+    Flags &= ~Event_Mask_Control;
+    Flags &= ~Event_Mask_LControl;
+    Flags &= ~Event_Mask_RControl;
+
+    return Flags;
+}
+
 internal inline void
 CreateAndPostKeyEvent(CGEventFlags Flags, CGKeyCode Key, bool Pressed)
 {
     CGEventRef KeyEvent = CGEventCreateKeyboardEvent(NULL, Key, Pressed);
 
-    if(IsMacOSSierraOrNewer())
-    {
-        Flags |= CGEventGetFlags(KeyEvent);
-    }
-
+    Flags |= ClearModifierFlags(CGEventGetFlags(KeyEvent));
     CGEventSetFlags(KeyEvent, Flags);
     CGEventPost(kCGHIDEventTap, KeyEvent);
 
