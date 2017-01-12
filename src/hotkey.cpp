@@ -537,14 +537,16 @@ bool HotkeyForCGEvent(CGEventFlags Flags, CGKeyCode Key, hotkey **Hotkey, bool L
 
 void SendKeySequence(const char *Sequence)
 {
-    CFStringRef SequenceRef = CFStringCreateWithCString(NULL, Sequence, kCFStringEncodingMacRoman);
+    CFStringRef SequenceRef = CFStringCreateWithCString(NULL, Sequence, kCFStringEncodingUTF8);
+    CFIndex SequenceLength = CFStringGetLength(SequenceRef);
+
     CGEventRef KeyDownEvent = CGEventCreateKeyboardEvent(NULL, 0, true);
     CGEventRef KeyUpEvent = CGEventCreateKeyboardEvent(NULL, 0, false);
 
     UniChar OutputBuffer;
-    for(size_t Index = 0;
-        *Sequence != '\0';
-        ++Index, ++Sequence)
+    for(CFIndex Index = 0;
+        Index < SequenceLength;
+        ++Index)
     {
         CFStringGetCharacters(SequenceRef, CFRangeMake(Index, 1), &OutputBuffer);
 
@@ -552,11 +554,11 @@ void SendKeySequence(const char *Sequence)
         CGEventKeyboardSetUnicodeString(KeyDownEvent, 1, &OutputBuffer);
         CGEventPost(kCGHIDEventTap, KeyDownEvent);
 
+        usleep(100);
+
         CGEventSetFlags(KeyUpEvent, 0);
         CGEventKeyboardSetUnicodeString(KeyUpEvent, 1, &OutputBuffer);
         CGEventPost(kCGHIDEventTap, KeyUpEvent);
-
-        usleep(100);
     }
 
     CFRelease(KeyUpEvent);
