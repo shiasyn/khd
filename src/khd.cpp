@@ -159,6 +159,21 @@ Init()
 }
 
 internal inline bool
+StringPrefix(const char *String, const char *Prefix)
+{
+    size_t StringLength = strlen(String);
+    size_t PrefixLength = strlen(Prefix);
+
+    bool Result = false;
+    if(StringLength >= PrefixLength)
+    {
+        Result = (strncmp(String, Prefix, PrefixLength) == 0);
+    }
+
+    return Result;
+}
+
+internal inline bool
 ParseArguments(int Count, char **Args)
 {
     int Option;
@@ -198,6 +213,16 @@ ParseArguments(int Count, char **Args)
                 if(ConnectToDaemon(&SockFD))
                 {
                     WriteToSocket(optarg, SockFD);
+                    if(StringPrefix(optarg, "print"))
+                    {
+                        char *Response = ReadFromSocket(SockFD);
+                        if(Response)
+                        {
+                            fprintf(stdout, "%s\n", Response);
+                            free(Response);
+                        }
+                    }
+
                     CloseSocket(SockFD);
                     return true;
                 }

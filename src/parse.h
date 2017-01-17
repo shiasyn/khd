@@ -2,7 +2,7 @@
 #define KHD_PARSE_H
 
 void ParseConfig(char *Contents);
-void ParseKhd(char *Contents);
+void ParseKhd(char *Contents, int SockFD);
 
 struct hotkey;
 void ParseKeySym(char *KeySym, hotkey *Hotkey);

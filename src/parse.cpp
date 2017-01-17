@@ -2,6 +2,7 @@
 #include "tokenize.h"
 #include "locale.h"
 #include "hotkey.h"
+#include "daemon.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -523,7 +524,7 @@ ParseKhdMode(tokenizer *Tokenizer)
 }
 
 internal void
-ParseKhd(tokenizer *Tokenizer)
+ParseKhd(tokenizer *Tokenizer, int SockFD)
 {
     token Token = GetToken(Tokenizer);
     switch(Token.Type)
@@ -550,6 +551,22 @@ ParseKhd(tokenizer *Tokenizer)
             {
                 ParseKhdMode(Tokenizer);
             }
+            else if(TokenEquals(Token, "print"))
+            {
+                token Query = GetToken(Tokenizer);
+                if(TokenEquals(Query, "mode"))
+                {
+                    if((ActiveBindingMode) &&
+                       (ActiveBindingMode->Name))
+                    {
+                        WriteToSocket(ActiveBindingMode->Name, SockFD);
+                    }
+                    else
+                    {
+                        WriteToSocket("<Unknown Mode>", SockFD);
+                    }
+                }
+            }
         } break;
         default:
         {
@@ -558,10 +575,10 @@ ParseKhd(tokenizer *Tokenizer)
     }
 }
 
-void ParseKhd(char *Contents)
+void ParseKhd(char *Contents, int SockFD)
 {
     tokenizer Tokenizer = { Contents };
-    ParseKhd(&Tokenizer);
+    ParseKhd(&Tokenizer, SockFD);
 }
 
 void ParseKeySym(char *KeySym, hotkey *Hotkey)
@@ -608,7 +625,7 @@ void ParseConfig(char *Contents)
             {
                 if(TokenEquals(Token, "khd"))
                 {
-                    ParseKhd(&Tokenizer);
+                    ParseKhd(&Tokenizer, 0);
                 }
                 else
                 {

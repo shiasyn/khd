@@ -65,7 +65,7 @@ HandleConnection(void *)
             char *Message = ReadFromSocket(SockFD);
             if(Message)
             {
-                ParseKhd(Message);
+                ParseKhd(Message, SockFD);
                 free(Message);
             }
 

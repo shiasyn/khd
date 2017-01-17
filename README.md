@@ -47,6 +47,9 @@ Arguments:
 
 Interactive commands:
 ```
+# print active mode
+khd -e "print mode"
+
 # activate a mode
 khd -e "mode activate my_mode"
 
