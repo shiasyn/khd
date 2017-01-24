@@ -53,6 +53,7 @@ enum hotkey_flag
 
     Hotkey_Flag_Passthrough = (1 << 12),
     Hotkey_Flag_Literal = (1 << 13),
+    Hotkey_Flag_MouseButton = (1 << 14),
 };
 
 enum hotkey_type
@@ -126,7 +127,8 @@ ClearFlags(hotkey *Hotkey, uint32_t Flag)
 }
 
 bool ExecuteHotkey(hotkey *Hotkey);
-bool HotkeyForCGEvent(CGEventFlags Flags, uint32_t Value, hotkey **Hotkey, bool Literal);
+hotkey CreateHotkeyFromCGEvent(CGEventFlags Flags, uint32_t Value);
+bool HotkeyForCGEvent(hotkey *Eventkey, hotkey **Hotkey, bool Literal);
 void RefreshModifierState(CGEventFlags Flags, CGKeyCode Key);
 
 mode *CreateBindingMode(const char *Mode);

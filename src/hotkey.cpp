@@ -271,6 +271,12 @@ CompareControlKey(hotkey *A, hotkey *B)
 }
 
 internal inline bool
+CompareMouseButtonState(hotkey *A, hotkey *B)
+{
+    return (HasFlags(A, Hotkey_Flag_MouseButton) == HasFlags(B, Hotkey_Flag_MouseButton));
+}
+
+internal inline bool
 HotkeysAreEqual(hotkey *A, hotkey *B)
 {
     if(A && B)
@@ -292,6 +298,7 @@ HotkeysAreEqual(hotkey *A, hotkey *B)
                    CompareShiftKey(A, B) &&
                    CompareAltKey(A, B) &&
                    CompareControlKey(A, B) &&
+                   CompareMouseButtonState(A, B) &&
                    A->Value == B->Value;
         }
     }
@@ -299,8 +306,7 @@ HotkeysAreEqual(hotkey *A, hotkey *B)
     return false;
 }
 
-internal hotkey
-CreateHotkeyFromCGEvent(CGEventFlags Flags, uint32_t Value)
+hotkey CreateHotkeyFromCGEvent(CGEventFlags Flags, uint32_t Value)
 {
     hotkey Eventkey = {};
     Eventkey.Value = Value;
@@ -408,8 +414,10 @@ internal inline void
 ExecuteModifierOnlyHotkey()
 {
     CGEventFlags EventFlags = CreateCGEventFlagsFromHotkeyFlags(ModifierState.Flags);
+    hotkey Eventkey = CreateHotkeyFromCGEvent(EventFlags, 0);
+
     hotkey *Hotkey = NULL;
-    if(HotkeyForCGEvent(EventFlags, 0, &Hotkey, false))
+    if(HotkeyForCGEvent(&Eventkey, &Hotkey, false))
     {
         ExecuteHotkey(Hotkey);
     }
@@ -520,15 +528,14 @@ HotkeyExists(hotkey *Seek, hotkey **Result, const char *Mode)
     return false;
 }
 
-bool HotkeyForCGEvent(CGEventFlags Flags, uint32_t Value, hotkey **Hotkey, bool Literal)
+bool HotkeyForCGEvent(hotkey *Seek, hotkey **Hotkey, bool Literal)
 {
-    hotkey Eventkey = CreateHotkeyFromCGEvent(Flags, Value);
     if(Literal)
     {
-        AddFlags(&Eventkey, Hotkey_Flag_Literal);
+        AddFlags(Seek, Hotkey_Flag_Literal);
     }
 
-    return HotkeyExists(&Eventkey, Hotkey, ActiveBindingMode->Name);
+    return HotkeyExists(Seek, Hotkey, ActiveBindingMode->Name);
 }
 
 void SendKeySequence(const char *Sequence)

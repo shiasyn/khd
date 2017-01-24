@@ -86,6 +86,7 @@ bool OtherMouseButtonFromString(char *Temp, hotkey *Hotkey)
     uint32_t Button = strtoul(Temp, 0, 0);
     if(Button >= 3)
     {
+        AddFlags(Hotkey, Hotkey_Flag_MouseButton);
         Hotkey->Value = Button;
         Result = true;
     }

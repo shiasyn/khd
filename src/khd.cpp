@@ -71,12 +71,12 @@ KeyCallback(CGEventTapProxy Proxy, CGEventType Type, CGEventRef Event, void *Con
         } break;
         case kCGEventKeyDown:
         {
-            CGEventFlags Flags = CGEventGetFlags(Event);
-            CGKeyCode Key = CGEventGetIntegerValueField(Event, kCGKeyboardEventKeycode);
+            hotkey Eventkey = CreateHotkeyFromCGEvent(CGEventGetFlags(Event),
+                                                      CGEventGetIntegerValueField(Event, kCGKeyboardEventKeycode));
             ModifierState.Valid = false;
 
             hotkey *Hotkey = NULL;
-            if(HotkeyForCGEvent(Flags, Key, &Hotkey, true))
+            if(HotkeyForCGEvent(&Eventkey, &Hotkey, true))
             {
                 if((ExecuteHotkey(Hotkey)) &&
                    (!HasFlags(Hotkey, Hotkey_Flag_Passthrough)))
@@ -87,11 +87,12 @@ KeyCallback(CGEventTapProxy Proxy, CGEventType Type, CGEventRef Event, void *Con
         } break;
         case kCGEventOtherMouseDown:
         {
-            CGEventFlags Flags = CGEventGetFlags(Event);
-            CGMouseButton Button = CGEventGetIntegerValueField(Event, kCGMouseEventButtonNumber);
+            hotkey Eventkey = CreateHotkeyFromCGEvent(CGEventGetFlags(Event),
+                                                      CGEventGetIntegerValueField(Event, kCGMouseEventButtonNumber));
+            AddFlags(&Eventkey, Hotkey_Flag_MouseButton);
 
             hotkey *Hotkey = NULL;
-            if(HotkeyForCGEvent(Flags, Button, &Hotkey, true))
+            if(HotkeyForCGEvent(&Eventkey, &Hotkey, true))
             {
                 if((ExecuteHotkey(Hotkey)) &&
                    (!HasFlags(Hotkey, Hotkey_Flag_Passthrough)))
