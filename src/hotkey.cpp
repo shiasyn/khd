@@ -413,8 +413,8 @@ CreateCGEventFlagsFromHotkeyFlags(uint32_t HotkeyFlags)
 internal inline void
 ExecuteModifierOnlyHotkey()
 {
-    CGEventFlags EventFlags = CreateCGEventFlagsFromHotkeyFlags(ModifierState.Flags);
-    hotkey Eventkey = CreateHotkeyFromCGEvent(EventFlags, 0);
+    hotkey Eventkey = {};
+    Eventkey.Flags = ModifierState.Flags;
 
     hotkey *Hotkey = NULL;
     if(HotkeyForCGEvent(&Eventkey, &Hotkey, false))
