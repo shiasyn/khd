@@ -4,8 +4,21 @@
 #                   <keysym> [!] [<app list>] [->] : <command>
 #                   where
 #                       <keysym>   = mode + mod + ... + mod - literal
-#                       <keysym>   = mode + mod + ... + mod - keycode (must have 0x prefix)
-#                       <keysym>   = mode + mod + ... + mod (modifier only binding)
+#
+#                       <keysym>   = mode + mod + ... + mod - keycode
+#                                    keycode must have 0x prefix
+#
+#                       <keysym>   = mode + mod + ... + mod - button#
+#                                    replace '#' with mouse-button id; id >= 3
+#
+#                       modifier only binding
+#                       <keysym>   = mode + mod + ... + mod
+#
+#                       literal only binding
+#                       <keysym>   = - literal
+#
+#                       keycode only binding
+#                       <keysym>   = - keycode
 #
 #                       [<app,
 #                         app,     = optional list '[app1, ..., appN]' of applications
@@ -64,6 +77,10 @@
 # rshift : khd -p "shift - 9"
 # lcmd   : khd -p "shift + alt - 8"
 # rcmd   : khd -p "shift + alt - 9"
+
+# NOTE(koekeishiya) Bind mouse-buttons
+# - button3 : khd -w "mouse-button 3 pressed"
+# - button4 : khd -w "mouse-button 4 pressed"
 
 # TODO(koekeishiya): possibly allow combined syntax such as
 # [switcher,ytd] + ctrl - f : khd -e "mode activate default"

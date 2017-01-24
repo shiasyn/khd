@@ -292,7 +292,7 @@ HotkeysAreEqual(hotkey *A, hotkey *B)
                    CompareShiftKey(A, B) &&
                    CompareAltKey(A, B) &&
                    CompareControlKey(A, B) &&
-                   A->Key == B->Key;
+                   A->Value == B->Value;
         }
     }
 
@@ -300,10 +300,10 @@ HotkeysAreEqual(hotkey *A, hotkey *B)
 }
 
 internal hotkey
-CreateHotkeyFromCGEvent(CGEventFlags Flags, CGKeyCode Key)
+CreateHotkeyFromCGEvent(CGEventFlags Flags, uint32_t Value)
 {
     hotkey Eventkey = {};
-    Eventkey.Key = Key;
+    Eventkey.Value = Value;
 
     if((Flags & Event_Mask_Cmd) == Event_Mask_Cmd)
     {
@@ -499,19 +499,15 @@ void RefreshModifierState(CGEventFlags Flags, CGKeyCode Key)
 }
 
 internal bool
-HotkeyExists(uint32_t Flags, CGKeyCode Keycode, hotkey **Result, const char *Mode)
+HotkeyExists(hotkey *Seek, hotkey **Result, const char *Mode)
 {
-    hotkey TempHotkey = {};
-    TempHotkey.Flags = Flags;
-    TempHotkey.Key = Keycode;
-
     mode *BindingMode = GetBindingMode(Mode);
     if(BindingMode)
     {
         hotkey *Hotkey = BindingMode->Hotkey;
         while(Hotkey)
         {
-            if(HotkeysAreEqual(Hotkey, &TempHotkey))
+            if(HotkeysAreEqual(Hotkey, Seek))
             {
                 *Result = Hotkey;
                 return true;
@@ -524,15 +520,15 @@ HotkeyExists(uint32_t Flags, CGKeyCode Keycode, hotkey **Result, const char *Mod
     return false;
 }
 
-bool HotkeyForCGEvent(CGEventFlags Flags, CGKeyCode Key, hotkey **Hotkey, bool Literal)
+bool HotkeyForCGEvent(CGEventFlags Flags, uint32_t Value, hotkey **Hotkey, bool Literal)
 {
-    hotkey Eventkey = CreateHotkeyFromCGEvent(Flags, Key);
+    hotkey Eventkey = CreateHotkeyFromCGEvent(Flags, Value);
     if(Literal)
     {
         AddFlags(&Eventkey, Hotkey_Flag_Literal);
     }
 
-    return HotkeyExists(Eventkey.Flags, Eventkey.Key, Hotkey, ActiveBindingMode->Name);
+    return HotkeyExists(&Eventkey, Hotkey, ActiveBindingMode->Name);
 }
 
 void SendKeySequence(const char *Sequence)
@@ -607,6 +603,6 @@ void SendKeyPress(char *KeySym)
     ParseKeySym(KeySym, &Hotkey);
     CGEventFlags Flags = CreateCGEventFlagsFromHotkeyFlags(Hotkey.Flags);
 
-    CreateAndPostKeyEvent(Flags, Hotkey.Key, true);
-    CreateAndPostKeyEvent(Flags, Hotkey.Key, false);
+    CreateAndPostKeyEvent(Flags, Hotkey.Value, true);
+    CreateAndPostKeyEvent(Flags, Hotkey.Value, false);
 }

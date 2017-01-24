@@ -10,6 +10,9 @@
 #include <stdarg.h>
 
 #define internal static
+#define MOUSE_BUTTON_PREFIX "button"
+#define MOUSE_BUTTON_PREFIX_LENGTH (sizeof(MOUSE_BUTTON_PREFIX) - 1)
+
 extern modifier_state ModifierState;
 extern mode DefaultBindingMode;
 extern mode *ActiveBindingMode;
@@ -315,7 +318,7 @@ internal void
 ParseKeyHexadecimal(tokenizer *Tokenizer, token *Token, hotkey *Hotkey, bool ExpectCommand)
 {
     char *Temp = AllocAndCopyString(Token->Text, Token->Length);
-    Hotkey->Key = HexToInt(Temp);
+    Hotkey->Value = HexToInt(Temp);
     free(Temp);
 
     if(ExpectCommand)
@@ -333,7 +336,14 @@ ParseKeyLiteral(tokenizer *Tokenizer, token *Token, hotkey *Hotkey, bool ExpectC
 
     if(Token->Length > 1)
     {
-        Result = LayoutIndependentKeycode(Temp, Hotkey);
+        if(StringPrefix(Temp, MOUSE_BUTTON_PREFIX))
+        {
+            Result = OtherMouseButtonFromString(Temp + MOUSE_BUTTON_PREFIX_LENGTH, Hotkey);
+        }
+        else
+        {
+            Result = LayoutIndependentKeycode(Temp, Hotkey);
+        }
     }
     else
     {

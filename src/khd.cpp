@@ -7,10 +7,11 @@
 #include <pthread.h>
 #include <Carbon/Carbon.h>
 
+#include "sharedworkspace.h"
 #include "daemon.h"
+#include "locale.h"
 #include "parse.h"
 #include "hotkey.h"
-#include "sharedworkspace.h"
 
 #define internal static
 extern "C" bool CGSIsSecureEventInputSet();
@@ -84,6 +85,21 @@ KeyCallback(CGEventTapProxy Proxy, CGEventType Type, CGEventRef Event, void *Con
                 }
             }
         } break;
+        case kCGEventOtherMouseDown:
+        {
+            CGEventFlags Flags = CGEventGetFlags(Event);
+            CGMouseButton Button = CGEventGetIntegerValueField(Event, kCGMouseEventButtonNumber);
+
+            hotkey *Hotkey = NULL;
+            if(HotkeyForCGEvent(Flags, Button, &Hotkey, true))
+            {
+                if((ExecuteHotkey(Hotkey)) &&
+                   (!HasFlags(Hotkey, Hotkey_Flag_Passthrough)))
+                {
+                    return NULL;
+                }
+            }
+        } break;
         case kCGEventFlagsChanged:
         {
             CGEventFlags Flags = CGEventGetFlags(Event);
@@ -99,6 +115,7 @@ internal inline void
 ConfigureRunLoop()
 {
     CGEventMask KhdEventMask = (1 << kCGEventKeyDown) |
+                               (1 << kCGEventOtherMouseDown) |
                                (1 << kCGEventFlagsChanged);
     KhdEventTap = CGEventTapCreate(kCGSessionEventTap,
                                    kCGHeadInsertEventTap,
@@ -156,21 +173,6 @@ Init()
     }
 
     signal(SIGCHLD, SIG_IGN);
-}
-
-internal inline bool
-StringPrefix(const char *String, const char *Prefix)
-{
-    size_t StringLength = strlen(String);
-    size_t PrefixLength = strlen(Prefix);
-
-    bool Result = false;
-    if(StringLength >= PrefixLength)
-    {
-        Result = (strncmp(String, Prefix, PrefixLength) == 0);
-    }
-
-    return Result;
 }
 
 internal inline bool

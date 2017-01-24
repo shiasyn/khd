@@ -71,10 +71,25 @@ bool KeycodeFromChar(char Key, hotkey *Hotkey)
     bool Result = true;
     UniChar Character = Key;
     CFStringRef CharStr = CFStringCreateWithCharacters(kCFAllocatorDefault, &Character, 1);
-    if(!CFDictionaryGetValueIfPresent(CharToKeycode, CharStr, (const void **)&Hotkey->Key))
+    if(!CFDictionaryGetValueIfPresent(CharToKeycode, CharStr, (const void **)&Hotkey->Value))
         Result = false;
 
     CFRelease(CharStr);
+    return Result;
+}
+
+// NOTE(koekeishiya): The value 0, 1 and 2 is mapped to the left, right and middle mouse-button.
+bool OtherMouseButtonFromString(char *Temp, hotkey *Hotkey)
+{
+    bool Result = false;
+
+    uint32_t Button = strtoul(Temp, 0, 0);
+    if(Button >= 3)
+    {
+        Hotkey->Value = Button;
+        Result = true;
+    }
+
     return Result;
 }
 
@@ -83,65 +98,65 @@ bool LayoutIndependentKeycode(char *Key, hotkey *Hotkey)
     bool Result = true;
 
     if(StringsAreEqual(Key, "return"))
-        Hotkey->Key = kVK_Return;
+        Hotkey->Value = kVK_Return;
     else if(StringsAreEqual(Key, "tab"))
-        Hotkey->Key = kVK_Tab;
+        Hotkey->Value = kVK_Tab;
     else if(StringsAreEqual(Key, "space"))
-        Hotkey->Key = kVK_Space;
+        Hotkey->Value = kVK_Space;
     else if(StringsAreEqual(Key, "backspace"))
-        Hotkey->Key = kVK_Delete;
+        Hotkey->Value = kVK_Delete;
     else if(StringsAreEqual(Key, "delete"))
-        Hotkey->Key = kVK_ForwardDelete;
+        Hotkey->Value = kVK_ForwardDelete;
     else if(StringsAreEqual(Key, "escape"))
-        Hotkey->Key =  kVK_Escape;
+        Hotkey->Value =  kVK_Escape;
     else if(StringsAreEqual(Key, "left"))
-        Hotkey->Key =  kVK_LeftArrow;
+        Hotkey->Value =  kVK_LeftArrow;
     else if(StringsAreEqual(Key, "right"))
-        Hotkey->Key =  kVK_RightArrow;
+        Hotkey->Value =  kVK_RightArrow;
     else if(StringsAreEqual(Key, "up"))
-        Hotkey->Key = kVK_UpArrow;
+        Hotkey->Value = kVK_UpArrow;
     else if(StringsAreEqual(Key, "down"))
-        Hotkey->Key = kVK_DownArrow;
+        Hotkey->Value = kVK_DownArrow;
     else if(StringsAreEqual(Key, "f1"))
-        Hotkey->Key = kVK_F1;
+        Hotkey->Value = kVK_F1;
     else if(StringsAreEqual(Key, "f2"))
-        Hotkey->Key = kVK_F2;
+        Hotkey->Value = kVK_F2;
     else if(StringsAreEqual(Key, "f3"))
-        Hotkey->Key = kVK_F3;
+        Hotkey->Value = kVK_F3;
     else if(StringsAreEqual(Key, "f4"))
-        Hotkey->Key = kVK_F4;
+        Hotkey->Value = kVK_F4;
     else if(StringsAreEqual(Key, "f5"))
-        Hotkey->Key = kVK_F5;
+        Hotkey->Value = kVK_F5;
     else if(StringsAreEqual(Key, "f6"))
-        Hotkey->Key = kVK_F6;
+        Hotkey->Value = kVK_F6;
     else if(StringsAreEqual(Key, "f7"))
-        Hotkey->Key = kVK_F7;
+        Hotkey->Value = kVK_F7;
     else if(StringsAreEqual(Key, "f8"))
-        Hotkey->Key = kVK_F8;
+        Hotkey->Value = kVK_F8;
     else if(StringsAreEqual(Key, "f9"))
-        Hotkey->Key = kVK_F9;
+        Hotkey->Value = kVK_F9;
     else if(StringsAreEqual(Key, "f10"))
-        Hotkey->Key = kVK_F10;
+        Hotkey->Value = kVK_F10;
     else if(StringsAreEqual(Key, "f11"))
-        Hotkey->Key = kVK_F11;
+        Hotkey->Value = kVK_F11;
     else if(StringsAreEqual(Key, "f12"))
-        Hotkey->Key = kVK_F12;
+        Hotkey->Value = kVK_F12;
     else if(StringsAreEqual(Key, "f13"))
-        Hotkey->Key = kVK_F13;
+        Hotkey->Value = kVK_F13;
     else if(StringsAreEqual(Key, "f14"))
-        Hotkey->Key = kVK_F14;
+        Hotkey->Value = kVK_F14;
     else if(StringsAreEqual(Key, "f15"))
-        Hotkey->Key = kVK_F15;
+        Hotkey->Value = kVK_F15;
     else if(StringsAreEqual(Key, "f16"))
-        Hotkey->Key = kVK_F16;
+        Hotkey->Value = kVK_F16;
     else if(StringsAreEqual(Key, "f17"))
-        Hotkey->Key = kVK_F17;
+        Hotkey->Value = kVK_F17;
     else if(StringsAreEqual(Key, "f18"))
-        Hotkey->Key = kVK_F18;
+        Hotkey->Value = kVK_F18;
     else if(StringsAreEqual(Key, "f19"))
-        Hotkey->Key = kVK_F19;
+        Hotkey->Value = kVK_F19;
     else if(StringsAreEqual(Key, "f20"))
-        Hotkey->Key = kVK_F20;
+        Hotkey->Value = kVK_F20;
     else
         Result = false;
 
@@ -151,4 +166,18 @@ bool LayoutIndependentKeycode(char *Key, hotkey *Hotkey)
 bool StringsAreEqual(const char *A, const char *B)
 {
     return strcmp(A, B) == 0;
+}
+
+bool StringPrefix(const char *String, const char *Prefix)
+{
+    size_t StringLength = strlen(String);
+    size_t PrefixLength = strlen(Prefix);
+
+    bool Result = false;
+    if(StringLength >= PrefixLength)
+    {
+        Result = (strncmp(String, Prefix, PrefixLength) == 0);
+    }
+
+    return Result;
 }
