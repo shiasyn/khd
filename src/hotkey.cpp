@@ -131,7 +131,8 @@ VerifyHotkeyType(hotkey *Hotkey)
     return true;
 }
 
-bool ExecuteHotkey(hotkey *Hotkey)
+internal bool
+ExecuteHotkey(hotkey *Hotkey)
 {
     bool Result = VerifyHotkeyType(Hotkey);
     if(Result)
@@ -143,7 +144,6 @@ bool ExecuteHotkey(hotkey *Hotkey)
 
     return Result;
 }
-
 
 void ActivateMode(const char *Mode)
 {
@@ -304,6 +304,56 @@ HotkeysAreEqual(hotkey *A, hotkey *B)
     }
 
     return false;
+}
+
+internal bool
+HotkeyExists(hotkey *Seek, hotkey **Result, const char *Mode)
+{
+    mode *BindingMode = GetBindingMode(Mode);
+    if(BindingMode)
+    {
+        hotkey *Hotkey = BindingMode->Hotkey;
+        while(Hotkey)
+        {
+            if(HotkeysAreEqual(Hotkey, Seek))
+            {
+                *Result = Hotkey;
+                return true;
+            }
+
+            Hotkey = Hotkey->Next;
+        }
+    }
+
+    return false;
+}
+
+internal bool
+HotkeyForCGEvent(hotkey *Seek, hotkey **Hotkey, bool Literal)
+{
+    if(Literal)
+    {
+        AddFlags(Seek, Hotkey_Flag_Literal);
+    }
+
+    return HotkeyExists(Seek, Hotkey, ActiveBindingMode->Name);
+}
+
+bool FindAndExecuteHotkey(hotkey *Eventkey)
+{
+    bool Result = false;
+
+    hotkey *Hotkey = NULL;
+    if(HotkeyForCGEvent(Eventkey, &Hotkey, true))
+    {
+        if((ExecuteHotkey(Hotkey)) &&
+           (!HasFlags(Hotkey, Hotkey_Flag_Passthrough)))
+        {
+            Result = true;
+        }
+    }
+
+    return Result;
 }
 
 hotkey CreateHotkeyFromCGEvent(CGEventFlags Flags, uint32_t Value)
@@ -504,38 +554,6 @@ void RefreshModifierState(CGEventFlags Flags, CGKeyCode Key)
         else
             ModifierReleased(Hotkey_Flag_RControl);
     }
-}
-
-internal bool
-HotkeyExists(hotkey *Seek, hotkey **Result, const char *Mode)
-{
-    mode *BindingMode = GetBindingMode(Mode);
-    if(BindingMode)
-    {
-        hotkey *Hotkey = BindingMode->Hotkey;
-        while(Hotkey)
-        {
-            if(HotkeysAreEqual(Hotkey, Seek))
-            {
-                *Result = Hotkey;
-                return true;
-            }
-
-            Hotkey = Hotkey->Next;
-        }
-    }
-
-    return false;
-}
-
-bool HotkeyForCGEvent(hotkey *Seek, hotkey **Hotkey, bool Literal)
-{
-    if(Literal)
-    {
-        AddFlags(Seek, Hotkey_Flag_Literal);
-    }
-
-    return HotkeyExists(Seek, Hotkey, ActiveBindingMode->Name);
 }
 
 void SendKeySequence(const char *Sequence)

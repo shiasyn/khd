@@ -126,9 +126,8 @@ ClearFlags(hotkey *Hotkey, uint32_t Flag)
     Hotkey->Flags &= ~Flag;
 }
 
-bool ExecuteHotkey(hotkey *Hotkey);
 hotkey CreateHotkeyFromCGEvent(CGEventFlags Flags, uint32_t Value);
-bool HotkeyForCGEvent(hotkey *Eventkey, hotkey **Hotkey, bool Literal);
+bool FindAndExecuteHotkey(hotkey *Eventkey);
 void RefreshModifierState(CGEventFlags Flags, CGKeyCode Key);
 
 mode *CreateBindingMode(const char *Mode);

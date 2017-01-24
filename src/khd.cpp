@@ -74,15 +74,9 @@ KeyCallback(CGEventTapProxy Proxy, CGEventType Type, CGEventRef Event, void *Con
             hotkey Eventkey = CreateHotkeyFromCGEvent(CGEventGetFlags(Event),
                                                       CGEventGetIntegerValueField(Event, kCGKeyboardEventKeycode));
             ModifierState.Valid = false;
-
-            hotkey *Hotkey = NULL;
-            if(HotkeyForCGEvent(&Eventkey, &Hotkey, true))
+            if(FindAndExecuteHotkey(&Eventkey))
             {
-                if((ExecuteHotkey(Hotkey)) &&
-                   (!HasFlags(Hotkey, Hotkey_Flag_Passthrough)))
-                {
-                    return NULL;
-                }
+                return NULL;
             }
         } break;
         case kCGEventOtherMouseDown:
@@ -90,15 +84,9 @@ KeyCallback(CGEventTapProxy Proxy, CGEventType Type, CGEventRef Event, void *Con
             hotkey Eventkey = CreateHotkeyFromCGEvent(CGEventGetFlags(Event),
                                                       CGEventGetIntegerValueField(Event, kCGMouseEventButtonNumber));
             AddFlags(&Eventkey, Hotkey_Flag_MouseButton);
-
-            hotkey *Hotkey = NULL;
-            if(HotkeyForCGEvent(&Eventkey, &Hotkey, true))
+            if(FindAndExecuteHotkey(&Eventkey))
             {
-                if((ExecuteHotkey(Hotkey)) &&
-                   (!HasFlags(Hotkey, Hotkey_Flag_Passthrough)))
-                {
-                    return NULL;
-                }
+                return NULL;
             }
         } break;
         case kCGEventFlagsChanged:
@@ -176,6 +164,31 @@ Init()
     signal(SIGCHLD, SIG_IGN);
 }
 
+internal inline void
+EmitMessage(char *Message)
+{
+    int SockFD;
+    if(ConnectToDaemon(&SockFD))
+    {
+        WriteToSocket(Message, SockFD);
+        if(StringPrefix(Message, "print"))
+        {
+            char *Response = ReadFromSocket(SockFD);
+            if(Response)
+            {
+                fprintf(stdout, "%s\n", Response);
+                free(Response);
+            }
+        }
+
+        CloseSocket(SockFD);
+    }
+    else
+    {
+        Error("Could not connect to daemon! Terminating.\n");
+    }
+}
+
 internal inline bool
 ParseArguments(int Count, char **Args)
 {
@@ -212,27 +225,8 @@ ParseArguments(int Count, char **Args)
             } break;
             case 'e':
             {
-                int SockFD;
-                if(ConnectToDaemon(&SockFD))
-                {
-                    WriteToSocket(optarg, SockFD);
-                    if(StringPrefix(optarg, "print"))
-                    {
-                        char *Response = ReadFromSocket(SockFD);
-                        if(Response)
-                        {
-                            fprintf(stdout, "%s\n", Response);
-                            free(Response);
-                        }
-                    }
-
-                    CloseSocket(SockFD);
-                    return true;
-                }
-                else
-                {
-                    Error("Could not connect to daemon! Terminating.\n");
-                }
+                EmitMessage(optarg);
+                return true;
             } break;
             case 'c':
             {
