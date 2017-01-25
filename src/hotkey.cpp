@@ -328,23 +328,13 @@ HotkeyExists(hotkey *Seek, hotkey **Result, const char *Mode)
     return false;
 }
 
-internal bool
-HotkeyForCGEvent(hotkey *Seek, hotkey **Hotkey, bool Literal)
-{
-    if(Literal)
-    {
-        AddFlags(Seek, Hotkey_Flag_Literal);
-    }
-
-    return HotkeyExists(Seek, Hotkey, ActiveBindingMode->Name);
-}
-
 bool FindAndExecuteHotkey(hotkey *Eventkey)
 {
     bool Result = false;
 
     hotkey *Hotkey = NULL;
-    if(HotkeyForCGEvent(Eventkey, &Hotkey, true))
+    AddFlags(Eventkey, Hotkey_Flag_Literal);
+    if(HotkeyExists(Eventkey, &Hotkey, ActiveBindingMode->Name))
     {
         if((ExecuteHotkey(Hotkey)) &&
            (!HasFlags(Hotkey, Hotkey_Flag_Passthrough)))
@@ -467,7 +457,7 @@ ExecuteModifierOnlyHotkey()
     Eventkey.Flags = ModifierState.Flags;
 
     hotkey *Hotkey = NULL;
-    if(HotkeyForCGEvent(&Eventkey, &Hotkey, false))
+    if(HotkeyExists(&Eventkey, &Hotkey, ActiveBindingMode->Name))
     {
         ExecuteHotkey(Hotkey);
     }
