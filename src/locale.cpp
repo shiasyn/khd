@@ -110,6 +110,16 @@ bool LayoutIndependentKeycode(char *Key, hotkey *Hotkey)
         Hotkey->Value = kVK_ForwardDelete;
     else if(StringsAreEqual(Key, "escape"))
         Hotkey->Value =  kVK_Escape;
+    else if(StringsAreEqual(Key, "home"))
+        Hotkey->Value =  kVK_Home;
+    else if(StringsAreEqual(Key, "end"))
+        Hotkey->Value =  kVK_End;
+    else if(StringsAreEqual(Key, "pageup"))
+        Hotkey->Value =  kVK_PageUp;
+    else if(StringsAreEqual(Key, "pagedown"))
+        Hotkey->Value =  kVK_PageDown;
+    else if(StringsAreEqual(Key, "help"))
+        Hotkey->Value =  kVK_Help;
     else if(StringsAreEqual(Key, "left"))
         Hotkey->Value =  kVK_LeftArrow;
     else if(StringsAreEqual(Key, "right"))
