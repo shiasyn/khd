@@ -17,7 +17,7 @@ extern modifier_state ModifierState;
 extern mode DefaultBindingMode;
 extern mode *ActiveBindingMode;
 extern char *ConfigFile;
-extern uint32_t Compatibility;
+extern uint32_t ConfigFlags;
 
 internal void
 Error(const char *Format, ...)
@@ -475,17 +475,36 @@ ParseKhdKwmCompatibility(tokenizer *Tokenizer)
     token Token = GetToken(Tokenizer);
     if(TokenEquals(Token, "on"))
     {
-        Compatibility |= (1 << 0);
+        ConfigFlags |= Config_Kwm_Border;
     }
     else if(TokenEquals(Token, "off"))
     {
-        Compatibility &= ~(1 << 0);
+        ConfigFlags &= ~Config_Kwm_Border;
     }
     else
     {
         Notice("Unexpected token '%.*s'\n", Token.Length, Token.Text);
     }
 }
+
+internal void
+ParseKhdVoidUnlistedBind(tokenizer *Tokenizer)
+{
+    token Token = GetToken(Tokenizer);
+    if(TokenEquals(Token, "on"))
+    {
+        ConfigFlags |= Config_Void_Bind;
+    }
+    else if(TokenEquals(Token, "off"))
+    {
+        ConfigFlags &= ~Config_Void_Bind;
+    }
+    else
+    {
+        Notice("Unexpected token '%.*s'\n", Token.Length, Token.Text);
+    }
+}
+
 internal void
 ParseKhdModTriggerTimeout(tokenizer *Tokenizer)
 {
@@ -552,6 +571,10 @@ ParseKhd(tokenizer *Tokenizer, int SockFD)
             else if(TokenEquals(Token, "kwm"))
             {
                 ParseKhdKwmCompatibility(Tokenizer);
+            }
+            else if(TokenEquals(Token, "void_unlisted_bind"))
+            {
+                ParseKhdVoidUnlistedBind(Tokenizer);
             }
             else if(TokenEquals(Token, "mod_trigger_timeout"))
             {

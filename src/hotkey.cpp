@@ -12,7 +12,7 @@
 extern modifier_state ModifierState;
 extern mode DefaultBindingMode;
 extern mode *ActiveBindingMode;
-extern uint32_t Compatibility;
+extern uint32_t ConfigFlags;
 extern char *FocusedApp;
 extern pthread_mutex_t Lock;
 
@@ -153,8 +153,7 @@ void ActivateMode(const char *Mode)
         printf("Activate mode: %s\n", Mode);
         ActiveBindingMode = BindingMode;
 
-        /* TODO(koekeishiya): Clean up 'Kwm' compatibility mode */
-        if((Compatibility & (1 << 0)) &&
+        if((ConfigFlags & Config_Kwm_Border) &&
            (ActiveBindingMode->Color))
             ExecuteKwmBorderCommand();
 
@@ -330,16 +329,18 @@ HotkeyExists(hotkey *Seek, hotkey **Result, const char *Mode)
 
 bool FindAndExecuteHotkey(hotkey *Eventkey)
 {
-    bool Result = false;
-
-    hotkey *Hotkey = NULL;
     AddFlags(Eventkey, Hotkey_Flag_Literal);
+    hotkey *Hotkey = NULL;
+
+    bool Result = (ConfigFlags & Config_Void_Bind)
+                ? ActiveBindingMode != &DefaultBindingMode
+                : false;
+
     if(HotkeyExists(Eventkey, &Hotkey, ActiveBindingMode->Name))
     {
-        if((ExecuteHotkey(Hotkey)) &&
-           (!HasFlags(Hotkey, Hotkey_Flag_Passthrough)))
+        if(ExecuteHotkey(Hotkey))
         {
-            Result = true;
+            Result = !HasFlags(Hotkey, Hotkey_Flag_Passthrough);
         }
     }
 

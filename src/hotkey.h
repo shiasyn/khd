@@ -14,6 +14,12 @@
 #define Modifier_Keycode_Right_Ctrl   0x3E
 #define Modifier_Keycode_Fn           0x3F
 
+enum config_option
+{
+    Config_Kwm_Border = (1 << 0),
+    Config_Void_Bind = (1 << 1),
+};
+
 enum osx_event_mask
 {
     Event_Mask_Alt = 0x00080000,

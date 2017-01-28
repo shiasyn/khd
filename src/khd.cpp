@@ -23,7 +23,7 @@ internal const char *KhdVersion = "1.2.0";
 modifier_state ModifierState = {};
 mode DefaultBindingMode = {};
 mode *ActiveBindingMode = NULL;
-uint32_t Compatibility = 0;
+uint32_t ConfigFlags = 0;
 pthread_mutex_t Lock;
 char *ConfigFile;
 char *FocusedApp;
