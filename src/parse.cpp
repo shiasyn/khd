@@ -3,11 +3,11 @@
 #include "locale.h"
 #include "hotkey.h"
 #include "daemon.h"
+#include "misc.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
 
 #define internal static
 #define MOUSE_BUTTON_PREFIX "button"
@@ -18,26 +18,6 @@ extern mode DefaultBindingMode;
 extern mode *ActiveBindingMode;
 extern char *ConfigFile;
 extern uint32_t ConfigFlags;
-
-internal void
-Error(const char *Format, ...)
-{
-    va_list Args;
-    va_start(Args, Format);
-    vfprintf(stderr, Format, Args);
-    va_end(Args);
-
-    exit(EXIT_FAILURE);
-}
-
-internal void
-Notice(const char *Format, ...)
-{
-    va_list Args;
-    va_start(Args, Format);
-    vfprintf(stderr, Format, Args);
-    va_end(Args);
-}
 
 internal inline unsigned int
 HexToInt(char *Hex)
@@ -449,7 +429,7 @@ ParseKhdModeProperties(token *TokenMode, tokenizer *Tokenizer)
             } break;
             default:
             {
-                Notice("Expected token of type 'Token_Digit': %.*s\n", Token.Length, Token.Text);
+                Error("Line#%d: Expected token of type 'Token_Digit': %.*s\n", Tokenizer->Line, Token.Length, Token.Text);
             };
         }
     }
@@ -483,7 +463,7 @@ ParseKhdKwmCompatibility(tokenizer *Tokenizer)
     }
     else
     {
-        Notice("Unexpected token '%.*s'\n", Token.Length, Token.Text);
+        Error("Line#%d: Unexpected token '%.*s'\n", Tokenizer->Line, Token.Length, Token.Text);
     }
 }
 
@@ -501,7 +481,7 @@ ParseKhdVoidUnlistedBind(tokenizer *Tokenizer)
     }
     else
     {
-        Notice("Unexpected token '%.*s'\n", Token.Length, Token.Text);
+        Error("Line#%d: Unexpected token '%.*s'\n", Tokenizer->Line, Token.Length, Token.Text);
     }
 }
 
@@ -519,7 +499,7 @@ ParseKhdModTriggerTimeout(tokenizer *Tokenizer)
         } break;
         default:
         {
-            Notice("Unexpected token '%.*s'\n", Token.Length, Token.Text);
+            Error("Line#%d: Unexpected token '%.*s'\n", Tokenizer->Line, Token.Length, Token.Text);
         } break;
     }
 }
@@ -532,7 +512,7 @@ ParseKhdMode(tokenizer *Tokenizer)
     {
         case Token_EndOfStream:
         {
-            Notice("Unexpected end of stream when parsing khd command!\n");
+            Error("Line#%d: Unexpected end of stream while parsing khd command!\n", Tokenizer->Line);
         } break;
         case Token_Identifier:
         {
@@ -547,7 +527,7 @@ ParseKhdMode(tokenizer *Tokenizer)
         } break;
         default:
         {
-            Notice("Unexpected token '%.*s'\n", Token.Length, Token.Text);
+            Error("Line#%d: Unexpected token '%.*s'\n", Tokenizer->Line, Token.Length, Token.Text);
         } break;
     }
 }
@@ -560,7 +540,7 @@ ParseKhd(tokenizer *Tokenizer, int SockFD)
     {
         case Token_EndOfStream:
         {
-            Notice("Unexpected end of stream when parsing khd command!\n");
+            Error("Line#%d: Unexpected end of stream while parsing khd command!\n", Tokenizer->Line);
         } break;
         case Token_Identifier:
         {
@@ -603,7 +583,7 @@ ParseKhd(tokenizer *Tokenizer, int SockFD)
         } break;
         default:
         {
-            Notice("Unexpected token '%.*s'\n", Token.Length, Token.Text);
+            Error("Line#%d: Unexpected token '%.*s'\n", Tokenizer->Line, Token.Length, Token.Text);
         } break;
     }
 }
