@@ -130,7 +130,8 @@ khd kwm on
 
 
 # suppress unregistered keybinds outside default mode
-khd void_unlisted_bind off
+# enabled by default! must be explicitly set to 'off'
+# khd void_unlisted_bind off
 
 
 
