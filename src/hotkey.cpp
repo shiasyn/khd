@@ -270,17 +270,14 @@ CompareControlKey(hotkey *A, hotkey *B)
 }
 
 internal inline bool
-CompareMouseButtonState(hotkey *A, hotkey *B)
-{
-    return (HasFlags(A, Hotkey_Flag_MouseButton) == HasFlags(B, Hotkey_Flag_MouseButton));
-}
-
-internal inline bool
 HotkeysAreEqual(hotkey *A, hotkey *B)
 {
     if(A && B)
     {
         if(HasFlags(A, Hotkey_Flag_Literal) != HasFlags(B, Hotkey_Flag_Literal))
+            return false;
+
+        if(HasFlags(A, Hotkey_Flag_MouseButton) != HasFlags(B, Hotkey_Flag_MouseButton))
             return false;
 
         if(!HasFlags(A, Hotkey_Flag_Literal) &&
@@ -297,7 +294,6 @@ HotkeysAreEqual(hotkey *A, hotkey *B)
                    CompareShiftKey(A, B) &&
                    CompareAltKey(A, B) &&
                    CompareControlKey(A, B) &&
-                   CompareMouseButtonState(A, B) &&
                    A->Value == B->Value;
         }
     }
