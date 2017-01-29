@@ -280,8 +280,7 @@ HotkeysAreEqual(hotkey *A, hotkey *B)
         if(HasFlags(A, Hotkey_Flag_MouseButton) != HasFlags(B, Hotkey_Flag_MouseButton))
             return false;
 
-        if(!HasFlags(A, Hotkey_Flag_Literal) &&
-           !HasFlags(B, Hotkey_Flag_Literal))
+        if(!HasFlags(A, Hotkey_Flag_Literal))
         {
             return CompareCmdKey(A, B) &&
                    CompareShiftKey(A, B) &&
