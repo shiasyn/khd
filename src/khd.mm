@@ -26,8 +26,8 @@
 extern "C" bool CGSIsSecureEventInputSet();
 #define IsSecureKeyboardEntryEnabled CGSIsSecureEventInputSet
 
-internal unsigned int MajorVersion = 1;
-internal unsigned int MinorVersion = 2;
+internal unsigned int MajorVersion = 2;
+internal unsigned int MinorVersion = 0;
 internal unsigned int PatchVersion = 0;
 
 internal CFMachPortRef KhdEventTap;
@@ -142,6 +142,7 @@ Init()
     DefaultBindingMode.Name = strdup("default");
     ActiveBindingMode = &DefaultBindingMode;
     ModifierState.Timeout = 0.1;
+    ConfigFlags |= Config_Void_Bind;
 
     printf("Khd: Using config '%s'\n", ConfigFile);
     char *Contents = ReadFile(ConfigFile);
