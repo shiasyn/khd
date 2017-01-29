@@ -17,9 +17,11 @@
 extern "C" bool CGSIsSecureEventInputSet();
 #define IsSecureKeyboardEntryEnabled CGSIsSecureEventInputSet
 
-internal CFMachPortRef KhdEventTap;
-internal const char *KhdVersion = "1.2.0";
+internal unsigned int MajorVersion = 1;
+internal unsigned int MinorVersion = 2;
+internal unsigned int PatchVersion = 0;
 
+internal CFMachPortRef KhdEventTap;
 modifier_state ModifierState = {};
 mode DefaultBindingMode = {};
 mode *ActiveBindingMode = NULL;
@@ -210,7 +212,7 @@ ParseArguments(int Count, char **Args)
         {
             case 'v':
             {
-                printf("Khd Version %s\n", KhdVersion);
+                printf("Khd Version %d.%d.%d\n", MajorVersion, MinorVersion, PatchVersion);
                 return true;
             } break;
             case 'w':
