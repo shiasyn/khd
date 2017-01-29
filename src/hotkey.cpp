@@ -447,19 +447,6 @@ CreateCGEventFlagsFromHotkeyFlags(uint32_t HotkeyFlags)
 }
 
 internal inline void
-ExecuteModifierOnlyHotkey()
-{
-    hotkey Eventkey = {};
-    Eventkey.Flags = ModifierState.Flags;
-
-    hotkey *Hotkey = NULL;
-    if(HotkeyExists(&Eventkey, &Hotkey, ActiveBindingMode->Name))
-    {
-        ExecuteHotkey(Hotkey);
-    }
-}
-
-internal inline void
 ModifierPressed(uint32_t Flag)
 {
     ModifierState.Flags |= Flag;
@@ -476,7 +463,14 @@ ModifierReleased(uint32_t Flag)
     if((GetTimeDiff(Time, ModifierState.Time) < ModifierState.Timeout) &&
        (ModifierState.Valid))
     {
-        ExecuteModifierOnlyHotkey();
+        hotkey Eventkey = {};
+        Eventkey.Flags = ModifierState.Flags;
+
+        hotkey *Hotkey = NULL;
+        if(HotkeyExists(&Eventkey, &Hotkey, ActiveBindingMode->Name))
+        {
+            ExecuteHotkey(Hotkey);
+        }
     }
 
     ModifierState.Flags &= ~Flag;

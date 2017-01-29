@@ -10,8 +10,17 @@
 #include "sharedworkspace.h"
 #include "daemon.h"
 #include "locale.h"
+#include "tokenize.h"
 #include "parse.h"
 #include "hotkey.h"
+#include "misc.h"
+
+#include "sharedworkspace.mm"
+#include "daemon.cpp"
+#include "locale.cpp"
+#include "tokenize.cpp"
+#include "parse.cpp"
+#include "hotkey.cpp"
 
 #define internal static
 extern "C" bool CGSIsSecureEventInputSet();
@@ -29,18 +38,6 @@ uint32_t ConfigFlags = 0;
 pthread_mutex_t Lock;
 char *ConfigFile;
 char *FocusedApp;
-
-
-internal inline void
-Error(const char *Format, ...)
-{
-    va_list Args;
-    va_start(Args, Format);
-    vfprintf(stderr, Format, Args);
-    va_end(Args);
-
-    exit(EXIT_FAILURE);
-}
 
 internal inline void
 SetFocus(const char *Name)
