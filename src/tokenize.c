@@ -2,7 +2,7 @@
 #define internal static
 
 internal inline void
-EatAllWhiteSpace(tokenizer *Tokenizer)
+EatAllWhiteSpace(struct tokenizer *Tokenizer)
 {
     while((Tokenizer->At[0]) &&
           (IsWhiteSpace(Tokenizer->At[0])))
@@ -14,14 +14,14 @@ EatAllWhiteSpace(tokenizer *Tokenizer)
     }
 }
 
-bool RequireToken(tokenizer *Tokenizer, token_type DesiredType)
+bool RequireToken(struct tokenizer *Tokenizer, enum token_type DesiredType)
 {
-    token Token = GetToken(Tokenizer);
+    struct token Token = GetToken(Tokenizer);
     bool Result = Token.Type == DesiredType;
     return Result;
 }
 
-bool TokenEquals(token Token, const char *Match)
+bool TokenEquals(struct token Token, const char *Match)
 {
     const char *At = Match;
     for(int Index = 0;
@@ -37,11 +37,12 @@ bool TokenEquals(token Token, const char *Match)
     return Result;
 }
 
-token GetToken(tokenizer *Tokenizer)
+struct token
+GetToken(struct tokenizer *Tokenizer)
 {
     EatAllWhiteSpace(Tokenizer);
 
-    token Token = {};
+    struct token Token = {};
     Token.Length = 1;
     Token.Text = Tokenizer->At;
 

@@ -9,9 +9,9 @@
 #define local_persist static
 #define CLOCK_PRECISION 1E-9
 
-extern modifier_state ModifierState;
-extern mode DefaultBindingMode;
-extern mode *ActiveBindingMode;
+extern struct modifier_state ModifierState;
+extern struct mode DefaultBindingMode;
+extern struct mode *ActiveBindingMode;
 extern uint32_t ConfigFlags;
 extern char *FocusedApp;
 extern pthread_mutex_t Lock;
@@ -58,14 +58,16 @@ UpdatePrefixTimer()
     });
 }
 
+
 internal void
 Execute(char *Command)
 {
     local_persist char Arg[] = "-c";
-    local_persist char *Shell = getenv("SHELL");
+    local_persist char *Shell = NULL;
     if(!Shell)
     {
-        Shell = strdup("/bin/bash");
+        char *EnvShell = getenv("SHELL");
+        Shell = EnvShell ? EnvShell : "/bin/bash";
     }
 
     int ChildPID = fork();
@@ -86,7 +88,7 @@ ExecuteKwmBorderCommand()
 }
 
 internal inline bool
-VerifyHotkeyType(hotkey *Hotkey)
+VerifyHotkeyType(struct hotkey *Hotkey)
 {
     if(!Hotkey->App)
         return true;
@@ -132,7 +134,7 @@ VerifyHotkeyType(hotkey *Hotkey)
 }
 
 internal bool
-ExecuteHotkey(hotkey *Hotkey)
+ExecuteHotkey(struct hotkey *Hotkey)
 {
     bool Result = VerifyHotkeyType(Hotkey);
     if(Result)
@@ -147,7 +149,7 @@ ExecuteHotkey(hotkey *Hotkey)
 
 void ActivateMode(const char *Mode)
 {
-    mode *BindingMode = GetBindingMode(Mode);
+    struct mode *BindingMode = GetBindingMode(Mode);
     if(BindingMode)
     {
         printf("Activate mode: %s\n", Mode);
@@ -162,31 +164,34 @@ void ActivateMode(const char *Mode)
     }
 }
 
-mode *CreateBindingMode(const char *Mode)
+struct mode *
+CreateBindingMode(const char *Mode)
 {
-    mode *Result = (mode *) malloc(sizeof(mode));
-    memset(Result, 0, sizeof(mode));
+    struct mode *Result = (struct mode *) malloc(sizeof(struct mode));
+    memset(Result, 0, sizeof(struct mode));
     Result->Name = strdup(Mode);
 
-    mode *Chain = GetLastBindingMode();
+    struct mode *Chain = GetLastBindingMode();
     Chain->Next = Result;
     return Result;
 }
 
-mode *GetLastBindingMode()
+struct mode *
+GetLastBindingMode()
 {
-    mode *BindingMode = &DefaultBindingMode;
+    struct mode *BindingMode = &DefaultBindingMode;
     while(BindingMode->Next)
         BindingMode = BindingMode->Next;
 
     return BindingMode;
 }
 
-mode *GetBindingMode(const char *Mode)
+struct mode *
+GetBindingMode(const char *Mode)
 {
-    mode *Result = NULL;
+    struct mode *Result = NULL;
 
-    mode *BindingMode = &DefaultBindingMode;
+    struct mode *BindingMode = &DefaultBindingMode;
     while(BindingMode)
     {
         if(StringsAreEqual(BindingMode->Name, Mode))
@@ -202,7 +207,7 @@ mode *GetBindingMode(const char *Mode)
 }
 
 internal inline bool
-CompareCmdKey(hotkey *A, hotkey *B)
+CompareCmdKey(struct hotkey *A, struct hotkey *B)
 {
     if(HasFlags(A, Hotkey_Flag_Cmd))
     {
@@ -219,7 +224,7 @@ CompareCmdKey(hotkey *A, hotkey *B)
 }
 
 internal inline bool
-CompareShiftKey(hotkey *A, hotkey *B)
+CompareShiftKey(struct hotkey *A, struct hotkey *B)
 {
     if(HasFlags(A, Hotkey_Flag_Shift))
     {
@@ -236,7 +241,7 @@ CompareShiftKey(hotkey *A, hotkey *B)
 }
 
 internal inline bool
-CompareAltKey(hotkey *A, hotkey *B)
+CompareAltKey(struct hotkey *A, struct hotkey *B)
 {
     if(HasFlags(A, Hotkey_Flag_Alt))
     {
@@ -253,7 +258,7 @@ CompareAltKey(hotkey *A, hotkey *B)
 }
 
 internal inline bool
-CompareControlKey(hotkey *A, hotkey *B)
+CompareControlKey(struct hotkey *A, struct hotkey *B)
 {
     if(HasFlags(A, Hotkey_Flag_Control))
     {
@@ -270,7 +275,7 @@ CompareControlKey(hotkey *A, hotkey *B)
 }
 
 internal inline bool
-HotkeysAreEqual(hotkey *A, hotkey *B)
+HotkeysAreEqual(struct hotkey *A, struct hotkey *B)
 {
     if(A && B)
     {
@@ -301,12 +306,12 @@ HotkeysAreEqual(hotkey *A, hotkey *B)
 }
 
 internal bool
-HotkeyExists(hotkey *Seek, hotkey **Result, const char *Mode)
+HotkeyExists(struct hotkey *Seek, struct hotkey **Result, const char *Mode)
 {
-    mode *BindingMode = GetBindingMode(Mode);
+    struct mode *BindingMode = GetBindingMode(Mode);
     if(BindingMode)
     {
-        hotkey *Hotkey = BindingMode->Hotkey;
+        struct hotkey *Hotkey = BindingMode->Hotkey;
         while(Hotkey)
         {
             if(HotkeysAreEqual(Hotkey, Seek))
@@ -322,10 +327,10 @@ HotkeyExists(hotkey *Seek, hotkey **Result, const char *Mode)
     return false;
 }
 
-bool FindAndExecuteHotkey(hotkey *Eventkey)
+bool FindAndExecuteHotkey(struct hotkey *Eventkey)
 {
     AddFlags(Eventkey, Hotkey_Flag_Literal);
-    hotkey *Hotkey = NULL;
+    struct hotkey *Hotkey = NULL;
 
     bool Result = (ConfigFlags & Config_Void_Bind)
                 ? ActiveBindingMode != &DefaultBindingMode
@@ -342,9 +347,10 @@ bool FindAndExecuteHotkey(hotkey *Eventkey)
     return Result;
 }
 
-hotkey CreateHotkeyFromCGEvent(CGEventFlags Flags, uint32_t Value)
+struct hotkey
+CreateHotkeyFromCGEvent(CGEventFlags Flags, uint32_t Value)
 {
-    hotkey Eventkey = {};
+    struct hotkey Eventkey = {};
     Eventkey.Value = Value;
 
     if((Flags & Event_Mask_Cmd) == Event_Mask_Cmd)
@@ -463,10 +469,10 @@ ModifierReleased(uint32_t Flag)
     if((GetTimeDiff(Time, ModifierState.Time) < ModifierState.Timeout) &&
        (ModifierState.Valid))
     {
-        hotkey Eventkey = {};
+        struct hotkey Eventkey = {};
         Eventkey.Flags = ModifierState.Flags;
 
-        hotkey *Hotkey = NULL;
+        struct hotkey *Hotkey = NULL;
         if(HotkeyExists(&Eventkey, &Hotkey, ActiveBindingMode->Name))
         {
             ExecuteHotkey(Hotkey);
@@ -604,8 +610,8 @@ CreateAndPostKeyEvent(CGEventFlags Flags, CGKeyCode Key, bool Pressed)
 
 void SendKeyPress(char *KeySym)
 {
-    hotkey Hotkey = {};
-    ParseKeySym(KeySym, &Hotkey);
+    struct hotkey Hotkey = {};
+    ParseKeySymEmit(KeySym, &Hotkey);
     CGEventFlags Flags = CreateCGEventFlagsFromHotkeyFlags(Hotkey.Flags);
 
     CreateAndPostKeyEvent(Flags, Hotkey.Value, true);

@@ -52,7 +52,7 @@ void CloseSocket(int SockFD)
 }
 
 internal void *
-HandleConnection(void *)
+HandleConnection(void *Context)
 {
     while(IsRunning)
     {
@@ -65,7 +65,7 @@ HandleConnection(void *)
             char *Message = ReadFromSocket(SockFD);
             if(Message)
             {
-                ParseKhd(Message, SockFD);
+                ParseKhdEmit(Message, SockFD);
                 free(Message);
             }
 

@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <Carbon/Carbon.h>
 
+#define internal static
+
 #define Modifier_Keycode_Left_Cmd     0x37
 #define Modifier_Keycode_Right_Cmd    0x36
 #define Modifier_Keycode_Left_Shift   0x38
@@ -81,15 +83,15 @@ struct mode
     char *Restore;
     long long Time;
 
-    hotkey *Hotkey;
-    mode *Next;
+    struct hotkey *Hotkey;
+    struct mode *Next;
 };
 
 struct hotkey
 {
     char *Mode;
 
-    hotkey_type Type;
+    enum hotkey_type Type;
     uint32_t Flags;
 
     /* NOTE(koekeishiya):
@@ -101,7 +103,7 @@ struct hotkey
     char *Command;
     char **App;
 
-    hotkey *Next;
+    struct hotkey *Next;
 };
 
 struct modifier_state
@@ -113,32 +115,32 @@ struct modifier_state
     bool Valid;
 };
 
-inline void
-AddFlags(hotkey *Hotkey, uint32_t Flag)
+internal inline void
+AddFlags(struct hotkey *Hotkey, uint32_t Flag)
 {
     Hotkey->Flags |= Flag;
 }
 
-inline bool
-HasFlags(hotkey *Hotkey, uint32_t Flag)
+internal inline bool
+HasFlags(struct hotkey *Hotkey, uint32_t Flag)
 {
     bool Result = Hotkey->Flags & Flag;
     return Result;
 }
 
-inline void
-ClearFlags(hotkey *Hotkey, uint32_t Flag)
+internal inline void
+ClearFlags(struct hotkey *Hotkey, uint32_t Flag)
 {
     Hotkey->Flags &= ~Flag;
 }
 
-hotkey CreateHotkeyFromCGEvent(CGEventFlags Flags, uint32_t Value);
-bool FindAndExecuteHotkey(hotkey *Eventkey);
+struct hotkey CreateHotkeyFromCGEvent(CGEventFlags Flags, uint32_t Value);
+bool FindAndExecuteHotkey(struct hotkey *Eventkey);
 void RefreshModifierState(CGEventFlags Flags, CGKeyCode Key);
 
-mode *CreateBindingMode(const char *Mode);
-mode *GetBindingMode(const char *Mode);
-mode *GetLastBindingMode();
+struct mode *CreateBindingMode(const char *Mode);
+struct mode *GetBindingMode(const char *Mode);
+struct mode *GetLastBindingMode();
 void ActivateMode(const char *Mode);
 
 void SendKeySequence(const char *Sequence);

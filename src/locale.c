@@ -46,7 +46,7 @@ CFStringFromKeycode(CGKeyCode Keycode)
     return NULL;
 }
 
-bool KeycodeFromChar(char Key, hotkey *Hotkey)
+bool KeycodeFromChar(char Key, struct hotkey *Hotkey)
 {
     local_persist CFMutableDictionaryRef CharToKeycode = NULL;
 
@@ -79,7 +79,7 @@ bool KeycodeFromChar(char Key, hotkey *Hotkey)
 }
 
 // NOTE(koekeishiya): The value 0, 1 and 2 is mapped to the left, right and middle mouse-button.
-bool OtherMouseButtonFromString(char *Temp, hotkey *Hotkey)
+bool OtherMouseButtonFromString(char *Temp, struct hotkey *Hotkey)
 {
     bool Result = false;
 
@@ -94,7 +94,7 @@ bool OtherMouseButtonFromString(char *Temp, hotkey *Hotkey)
     return Result;
 }
 
-bool LayoutIndependentKeycode(char *Key, hotkey *Hotkey)
+bool LayoutIndependentKeycode(char *Key, struct hotkey *Hotkey)
 {
     bool Result = true;
 

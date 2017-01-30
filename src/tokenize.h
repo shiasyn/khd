@@ -1,6 +1,8 @@
 #ifndef KHD_TOKENIZE_H
 #define KHD_TOKENIZE_H
 
+#define internal static
+
 enum token_type
 {
     Token_Identifier,
@@ -25,17 +27,17 @@ enum token_type
 struct token
 {
     char *Text;
-    unsigned int Length;
-    token_type Type;
+    unsigned Length;
+    enum token_type Type;
 };
 
 struct tokenizer
 {
     char *At;
-    unsigned int Line;
+    unsigned Line;
 };
 
-inline bool
+internal inline bool
 IsDot(char C)
 {
     bool Result = ((C == '.') ||
@@ -43,7 +45,7 @@ IsDot(char C)
     return Result;
 }
 
-inline bool
+internal inline bool
 IsEndOfLine(char C)
 {
     bool Result = ((C == '\n') ||
@@ -52,7 +54,7 @@ IsEndOfLine(char C)
     return Result;
 }
 
-inline bool
+internal inline bool
 IsWhiteSpace(char C)
 {
     bool Result = ((C == ' ') ||
@@ -62,7 +64,7 @@ IsWhiteSpace(char C)
     return Result;
 }
 
-inline bool
+internal inline bool
 IsAlpha(char C)
 {
     bool Result = (((C >= 'a') && (C <= 'z')) ||
@@ -72,14 +74,14 @@ IsAlpha(char C)
     return Result;
 }
 
-inline bool
+internal inline bool
 IsNumeric(char C)
 {
     bool Result = ((C >= '0') && (C <= '9'));
     return Result;
 }
 
-inline bool
+internal inline bool
 IsHexadecimal(char C)
 {
     bool Result = (((C >= 'a') && (C <= 'f')) ||
@@ -89,8 +91,8 @@ IsHexadecimal(char C)
 }
 
 
-token GetToken(tokenizer *Tokenizer);
-bool RequireToken(tokenizer *Tokenizer, token_type DesiredType);
-bool TokenEquals(token Token, const char *Match);
+struct token GetToken(struct tokenizer *Tokenizer);
+bool RequireToken(struct tokenizer *Tokenizer, enum token_type DesiredType);
+bool TokenEquals(struct token Token, const char *Match);
 
 #endif

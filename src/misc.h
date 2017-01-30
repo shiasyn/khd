@@ -4,7 +4,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-inline void
+#define internal static
+
+internal inline void
 Error(const char *Format, ...)
 {
     va_list Args;

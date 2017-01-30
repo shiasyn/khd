@@ -13,13 +13,13 @@
 #define MOUSE_BUTTON_PREFIX "button"
 #define MOUSE_BUTTON_PREFIX_LENGTH (sizeof(MOUSE_BUTTON_PREFIX) - 1)
 
-extern modifier_state ModifierState;
-extern mode DefaultBindingMode;
-extern mode *ActiveBindingMode;
+extern struct modifier_state ModifierState;
+extern struct mode DefaultBindingMode;
+extern struct mode *ActiveBindingMode;
 extern char *ConfigFile;
 extern uint32_t ConfigFlags;
 
-internal inline unsigned int
+internal inline unsigned
 HexToInt(char *Hex)
 {
     uint32_t Result;
@@ -78,20 +78,20 @@ AllocAndCopyList(char *Text, int Length)
     return Result;
 }
 
-internal inline hotkey *
+internal inline struct hotkey *
 AllocHotkey()
 {
-    hotkey *Hotkey = (hotkey *) malloc(sizeof(hotkey));
-    memset(Hotkey, 0, sizeof(hotkey));
+    struct hotkey *Hotkey = (struct hotkey *) malloc(sizeof(struct hotkey));
+    memset(Hotkey, 0, sizeof(struct hotkey));
     Hotkey->Mode = strdup("default");
 
     return Hotkey;
 }
 
 internal inline void
-AppendHotkey(hotkey *Hotkey)
+AppendHotkey(struct hotkey *Hotkey)
 {
-    mode *BindingMode = GetBindingMode(Hotkey->Mode);
+    struct mode *BindingMode = GetBindingMode(Hotkey->Mode);
     if(!BindingMode)
     {
         BindingMode = CreateBindingMode(Hotkey->Mode);
@@ -99,7 +99,7 @@ AppendHotkey(hotkey *Hotkey)
 
     if(BindingMode->Hotkey)
     {
-        hotkey *Last = BindingMode->Hotkey;
+        struct hotkey *Last = BindingMode->Hotkey;
         while(Last->Next)
             Last = Last->Next;
 
@@ -112,7 +112,7 @@ AppendHotkey(hotkey *Hotkey)
 }
 
 internal inline void
-DestroyHotkey(hotkey *Hotkey)
+DestroyHotkey(struct hotkey *Hotkey)
 {
     if(Hotkey->Next)
         DestroyHotkey(Hotkey->Next);
@@ -138,7 +138,7 @@ DestroyHotkey(hotkey *Hotkey)
 }
 
 internal inline void
-DestroyBindingMode(mode *BindingMode)
+DestroyBindingMode(struct mode *BindingMode)
 {
     if(BindingMode->Next)
         DestroyBindingMode(BindingMode->Next);
@@ -195,16 +195,16 @@ ReloadConfig()
 }
 
 internal void
-StripTrailingWhiteSpace(token *Token)
+StripTrailingWhiteSpace(struct token *Token)
 {
     while(IsWhiteSpace(Token->Text[Token->Length-1]))
         --Token->Length;
 }
 
 internal void
-ParseCommand(tokenizer *Tokenizer, hotkey *Hotkey)
+ParseCommand(struct tokenizer *Tokenizer, struct hotkey *Hotkey)
 {
-    token Command = GetToken(Tokenizer);
+    struct token Command = GetToken(Tokenizer);
     switch(Command.Type)
     {
         case Token_Passthrough:
@@ -250,7 +250,7 @@ ParseCommand(tokenizer *Tokenizer, hotkey *Hotkey)
 }
 
 internal inline void
-SetHotkeyMode(hotkey *Hotkey, char *Modifier)
+SetHotkeyMode(struct hotkey *Hotkey, char *Modifier)
 {
     if(Hotkey->Mode)
         free(Hotkey->Mode);
@@ -259,7 +259,7 @@ SetHotkeyMode(hotkey *Hotkey, char *Modifier)
 }
 
 internal void
-AddHotkeyModifier(char *Mod, int Length, hotkey *Hotkey)
+AddHotkeyModifier(char *Mod, int Length, struct hotkey *Hotkey)
 {
     char *Modifier = AllocAndCopyString(Mod, Length);
     printf("Token_Modifier: %s\n", Modifier);
@@ -295,7 +295,8 @@ AddHotkeyModifier(char *Mod, int Length, hotkey *Hotkey)
 }
 
 internal void
-ParseKeyHexadecimal(tokenizer *Tokenizer, token *Token, hotkey *Hotkey, bool ExpectCommand)
+ParseKeyHexadecimal(struct tokenizer *Tokenizer, struct token *Token,
+                    struct hotkey *Hotkey, bool ExpectCommand)
 {
     char *Temp = AllocAndCopyString(Token->Text, Token->Length);
     Hotkey->Value = HexToInt(Temp);
@@ -309,7 +310,8 @@ ParseKeyHexadecimal(tokenizer *Tokenizer, token *Token, hotkey *Hotkey, bool Exp
 }
 
 internal void
-ParseKeyLiteral(tokenizer *Tokenizer, token *Token, hotkey *Hotkey, bool ExpectCommand)
+ParseKeyLiteral(struct tokenizer *Tokenizer, struct token *Token,
+                struct hotkey *Hotkey, bool ExpectCommand)
 {
     char *Temp = AllocAndCopyString(Token->Text, Token->Length);
     bool Result = false;
@@ -344,17 +346,18 @@ ParseKeyLiteral(tokenizer *Tokenizer, token *Token, hotkey *Hotkey, bool ExpectC
 }
 
 internal void
-ParseKeySym(tokenizer *Tokenizer, token *Token, hotkey *Hotkey, bool ExpectCommand)
+ParseKeySym(struct tokenizer *Tokenizer, struct token *Token,
+            struct hotkey *Hotkey, bool ExpectCommand)
 {
     AddHotkeyModifier(Token->Text, Token->Length, Hotkey);
 
     char *At = Tokenizer->At;
-    token Symbol = GetToken(Tokenizer);
+    struct token Symbol = GetToken(Tokenizer);
     switch(Symbol.Type)
     {
         case Token_Plus:
         {
-            token Symbol = GetToken(Tokenizer);
+            struct token Symbol = GetToken(Tokenizer);
             ParseKeySym(Tokenizer, &Symbol, Hotkey, ExpectCommand);
         } break;
         case Token_Hex:
@@ -383,9 +386,9 @@ ParseKeySym(tokenizer *Tokenizer, token *Token, hotkey *Hotkey, bool ExpectComma
 }
 
 internal void
-ParseKhdModeActivate(tokenizer *Tokenizer)
+ParseKhdModeActivate(struct tokenizer *Tokenizer)
 {
-    token TokenMode = GetToken(Tokenizer);
+    struct token TokenMode = GetToken(Tokenizer);
     char *Mode = AllocAndCopyString(TokenMode.Text, TokenMode.Length);
     ActivateMode(Mode);
 
@@ -393,17 +396,17 @@ ParseKhdModeActivate(tokenizer *Tokenizer)
 }
 
 internal void
-ParseKhdModeProperties(token *TokenMode, tokenizer *Tokenizer)
+ParseKhdModeProperties(struct token *TokenMode, struct tokenizer *Tokenizer)
 {
     char *Mode = AllocAndCopyString(TokenMode->Text, TokenMode->Length);
-    mode *BindingMode = GetBindingMode(Mode);
+    struct mode *BindingMode = GetBindingMode(Mode);
     if(!BindingMode)
         BindingMode = CreateBindingMode(Mode);
 
-    token Token = GetToken(Tokenizer);
+    struct token Token = GetToken(Tokenizer);
     if(TokenEquals(Token, "prefix"))
     {
-        token Token = GetToken(Tokenizer);
+        struct token Token = GetToken(Tokenizer);
         if(TokenEquals(Token, "on"))
         {
             BindingMode->Prefix = true;
@@ -417,7 +420,7 @@ ParseKhdModeProperties(token *TokenMode, tokenizer *Tokenizer)
     }
     else if(TokenEquals(Token, "timeout"))
     {
-        token Token = GetToken(Tokenizer);
+        struct token Token = GetToken(Tokenizer);
         switch(Token.Type)
         {
             case Token_Digit:
@@ -435,13 +438,13 @@ ParseKhdModeProperties(token *TokenMode, tokenizer *Tokenizer)
     }
     else if(TokenEquals(Token, "color"))
     {
-        token Token = GetToken(Tokenizer);
+        struct token Token = GetToken(Tokenizer);
         BindingMode->Color = AllocAndCopyString(Token.Text, Token.Length);
         printf("Prefix Color: %s\n", BindingMode->Color);
     }
     else if(TokenEquals(Token, "restore"))
     {
-        token Token = GetToken(Tokenizer);
+        struct token Token = GetToken(Tokenizer);
         BindingMode->Restore = AllocAndCopyString(Token.Text, Token.Length);
         printf("Prefix Restore: %s\n", BindingMode->Restore);
     }
@@ -450,9 +453,9 @@ ParseKhdModeProperties(token *TokenMode, tokenizer *Tokenizer)
 }
 
 internal void
-ParseKhdKwmCompatibility(tokenizer *Tokenizer)
+ParseKhdKwmCompatibility(struct tokenizer *Tokenizer)
 {
-    token Token = GetToken(Tokenizer);
+    struct token Token = GetToken(Tokenizer);
     if(TokenEquals(Token, "on"))
     {
         ConfigFlags |= Config_Kwm_Border;
@@ -468,9 +471,9 @@ ParseKhdKwmCompatibility(tokenizer *Tokenizer)
 }
 
 internal void
-ParseKhdVoidUnlistedBind(tokenizer *Tokenizer)
+ParseKhdVoidUnlistedBind(struct tokenizer *Tokenizer)
 {
-    token Token = GetToken(Tokenizer);
+    struct token Token = GetToken(Tokenizer);
     if(TokenEquals(Token, "on"))
     {
         ConfigFlags |= Config_Void_Bind;
@@ -486,9 +489,9 @@ ParseKhdVoidUnlistedBind(tokenizer *Tokenizer)
 }
 
 internal void
-ParseKhdModTriggerTimeout(tokenizer *Tokenizer)
+ParseKhdModTriggerTimeout(struct tokenizer *Tokenizer)
 {
-    token Token = GetToken(Tokenizer);
+    struct token Token = GetToken(Tokenizer);
     switch(Token.Type)
     {
         case Token_Digit:
@@ -505,9 +508,9 @@ ParseKhdModTriggerTimeout(tokenizer *Tokenizer)
 }
 
 internal void
-ParseKhdMode(tokenizer *Tokenizer)
+ParseKhdMode(struct tokenizer *Tokenizer)
 {
-    token Token = GetToken(Tokenizer);
+    struct token Token = GetToken(Tokenizer);
     switch(Token.Type)
     {
         case Token_EndOfStream:
@@ -533,9 +536,9 @@ ParseKhdMode(tokenizer *Tokenizer)
 }
 
 internal void
-ParseKhd(tokenizer *Tokenizer, int SockFD)
+ParseKhd(struct tokenizer *Tokenizer, int SockFD)
 {
-    token Token = GetToken(Tokenizer);
+    struct token Token = GetToken(Tokenizer);
     switch(Token.Type)
     {
         case Token_EndOfStream:
@@ -566,7 +569,7 @@ ParseKhd(tokenizer *Tokenizer, int SockFD)
             }
             else if(TokenEquals(Token, "print"))
             {
-                token Query = GetToken(Tokenizer);
+                struct token Query = GetToken(Tokenizer);
                 if(TokenEquals(Query, "mode"))
                 {
                     if((ActiveBindingMode) &&
@@ -588,16 +591,16 @@ ParseKhd(tokenizer *Tokenizer, int SockFD)
     }
 }
 
-void ParseKhd(char *Contents, int SockFD)
+void ParseKhdEmit(char *Contents, int SockFD)
 {
-    tokenizer Tokenizer = { Contents };
+    struct tokenizer Tokenizer = { Contents };
     ParseKhd(&Tokenizer, SockFD);
 }
 
-void ParseKeySym(char *KeySym, hotkey *Hotkey)
+void ParseKeySymEmit(char *KeySym, struct hotkey *Hotkey)
 {
-    tokenizer Tokenizer = { KeySym };
-    token Token = GetToken(&Tokenizer);
+    struct tokenizer Tokenizer = { KeySym };
+    struct token Token = GetToken(&Tokenizer);
     switch(Token.Type)
     {
         case Token_Hex: { ParseKeyHexadecimal(&Tokenizer, &Token, Hotkey, false); } break;
@@ -609,11 +612,11 @@ void ParseKeySym(char *KeySym, hotkey *Hotkey)
 
 void ParseConfig(char *Contents)
 {
-    tokenizer Tokenizer = { Contents, 0 };
+    struct tokenizer Tokenizer = { Contents, 0 };
     bool Parsing = true;
     while(Parsing)
     {
-        token Token = GetToken(&Tokenizer);
+        struct token Token = GetToken(&Tokenizer);
         switch(Token.Type)
         {
             case Token_EndOfStream:
@@ -664,7 +667,7 @@ char *ReadFile(const char *File)
     if(Descriptor)
     {
         fseek(Descriptor, 0, SEEK_END);
-        unsigned int Length = ftell(Descriptor);
+        unsigned Length = ftell(Descriptor);
         fseek(Descriptor, 0, SEEK_SET);
 
         Contents = (char *) malloc(Length + 1);

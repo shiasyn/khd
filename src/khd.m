@@ -15,25 +15,25 @@
 #include "hotkey.h"
 #include "misc.h"
 
-#include "sharedworkspace.mm"
-#include "daemon.cpp"
-#include "locale.cpp"
-#include "tokenize.cpp"
-#include "parse.cpp"
-#include "hotkey.cpp"
+#include "sharedworkspace.m"
+#include "daemon.c"
+#include "locale.c"
+#include "tokenize.c"
+#include "parse.c"
+#include "hotkey.c"
 
 #define internal static
-extern "C" bool CGSIsSecureEventInputSet();
+extern bool CGSIsSecureEventInputSet();
 #define IsSecureKeyboardEntryEnabled CGSIsSecureEventInputSet
 
-internal unsigned int MajorVersion = 2;
-internal unsigned int MinorVersion = 0;
-internal unsigned int PatchVersion = 0;
+internal unsigned MajorVersion = 2;
+internal unsigned MinorVersion = 0;
+internal unsigned PatchVersion = 0;
 
 internal CFMachPortRef KhdEventTap;
-modifier_state ModifierState = {};
-mode DefaultBindingMode = {};
-mode *ActiveBindingMode = NULL;
+struct modifier_state ModifierState = {};
+struct mode DefaultBindingMode = {};
+struct mode *ActiveBindingMode = NULL;
 uint32_t ConfigFlags = 0;
 pthread_mutex_t Lock;
 char *ConfigFile;
@@ -70,8 +70,8 @@ KeyCallback(CGEventTapProxy Proxy, CGEventType Type, CGEventRef Event, void *Con
         } break;
         case kCGEventKeyDown:
         {
-            hotkey Eventkey = CreateHotkeyFromCGEvent(CGEventGetFlags(Event),
-                                                      CGEventGetIntegerValueField(Event, kCGKeyboardEventKeycode));
+            struct hotkey Eventkey = CreateHotkeyFromCGEvent(CGEventGetFlags(Event),
+                                                             CGEventGetIntegerValueField(Event, kCGKeyboardEventKeycode));
             ModifierState.Valid = false;
             if(FindAndExecuteHotkey(&Eventkey))
             {
@@ -80,8 +80,8 @@ KeyCallback(CGEventTapProxy Proxy, CGEventType Type, CGEventRef Event, void *Con
         } break;
         case kCGEventOtherMouseDown:
         {
-            hotkey Eventkey = CreateHotkeyFromCGEvent(CGEventGetFlags(Event),
-                                                      CGEventGetIntegerValueField(Event, kCGMouseEventButtonNumber));
+            struct hotkey Eventkey = CreateHotkeyFromCGEvent(CGEventGetFlags(Event),
+                                                             CGEventGetIntegerValueField(Event, kCGMouseEventButtonNumber));
             AddFlags(&Eventkey, Hotkey_Flag_MouseButton);
             if(FindAndExecuteHotkey(&Eventkey))
             {
@@ -94,6 +94,7 @@ KeyCallback(CGEventTapProxy Proxy, CGEventType Type, CGEventRef Event, void *Con
             CGKeyCode Key = CGEventGetIntegerValueField(Event, kCGKeyboardEventKeycode);
             RefreshModifierState(Flags, Key);
         } break;
+        default: {} break;
     }
 
     return Event;
