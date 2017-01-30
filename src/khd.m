@@ -26,15 +26,15 @@
 extern bool CGSIsSecureEventInputSet();
 #define IsSecureKeyboardEntryEnabled CGSIsSecureEventInputSet
 
+internal CFMachPortRef KhdEventTap;
 internal unsigned MajorVersion = 2;
 internal unsigned MinorVersion = 0;
 internal unsigned PatchVersion = 0;
 
-internal CFMachPortRef KhdEventTap;
-struct modifier_state ModifierState = {};
-struct mode DefaultBindingMode = {};
-struct mode *ActiveBindingMode = NULL;
-uint32_t ConfigFlags = 0;
+struct modifier_state ModifierState;
+struct mode DefaultBindingMode;
+struct mode *ActiveBindingMode;
+uint32_t ConfigFlags;
 pthread_mutex_t Lock;
 char *ConfigFile;
 char *FocusedApp;
