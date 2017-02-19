@@ -1,6 +1,6 @@
 ## Description [![Build Status](https://travis-ci.org/koekeishiya/khd.svg?branch=master)](https://travis-ci.org/koekeishiya/khd)
 
-**Khd** is a simple modal hotkey-daemon for OSX, using [Quartz Event Services](https://developer.apple.com/reference/coregraphics/1658572-quartz_event_services?language=objc).
+**Khd** is a simple modal hotkey-daemon for MacOS, using [Quartz Event Services](https://developer.apple.com/reference/coregraphics/1658572-quartz_event_services?language=objc).
 
 **Khd** must have access to the *Accessibility API*, or be ran as root.
 
@@ -71,6 +71,11 @@ Customize mode:
 # and must be performed within a given timeframe.
 # the following specifies the timeout (in seconds) to be used.
 khd mod_trigger_timeout 0.1
+
+# when 'default' mode is NOT active, any key-combination that
+# does not correspond to a valid bind will be suppressed.
+# this is enabled by default, and must be explicitly set to 'off'.
+khd void_unlisted_bind off
 
 # enable prefix mode
 khd mode my_mode prefix on
