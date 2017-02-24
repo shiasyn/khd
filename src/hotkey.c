@@ -550,21 +550,21 @@ void SendKeySequence(const char *Sequence)
     CGEventRef KeyDownEvent = CGEventCreateKeyboardEvent(NULL, 0, true);
     CGEventRef KeyUpEvent = CGEventCreateKeyboardEvent(NULL, 0, false);
 
-    UniChar OutputBuffer;
+    UniChar Character;
     for(CFIndex Index = 0;
         Index < SequenceLength;
         ++Index)
     {
-        CFStringGetCharacters(SequenceRef, CFRangeMake(Index, 1), &OutputBuffer);
+        Character = CFStringGetCharacterAtIndex(SequenceRef, Index);
 
         CGEventSetFlags(KeyDownEvent, 0);
-        CGEventKeyboardSetUnicodeString(KeyDownEvent, 1, &OutputBuffer);
+        CGEventKeyboardSetUnicodeString(KeyDownEvent, 1, &Character);
         CGEventPost(kCGHIDEventTap, KeyDownEvent);
 
         usleep(100);
 
         CGEventSetFlags(KeyUpEvent, 0);
-        CGEventKeyboardSetUnicodeString(KeyUpEvent, 1, &OutputBuffer);
+        CGEventKeyboardSetUnicodeString(KeyUpEvent, 1, &Character);
         CGEventPost(kCGHIDEventTap, KeyUpEvent);
     }
 
