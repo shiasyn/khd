@@ -5,7 +5,9 @@
 #include <signal.h>
 #include <string.h>
 #include <pthread.h>
+
 #include <Carbon/Carbon.h>
+#include <Cocoa/Cocoa.h>
 
 #include "sharedworkspace.h"
 #include "daemon.h"
