@@ -8,9 +8,6 @@
 
 #include <Carbon/Carbon.h>
 #include <Cocoa/Cocoa.h>
-#include <IOKit/IOKitLib.h>
-#include <IOKit/hidsystem/IOHIDLib.h>
-#include <IOKit/hidsystem/IOHIDParameter.h>
 
 #include "sharedworkspace.h"
 #include "daemon.h"
@@ -62,33 +59,6 @@ SetFocus(const char *Name)
     pthread_mutex_unlock(&Lock);
 }
 
-internal void
-SetCapslockState(bool Enabled)
-{
-    CFMutableDictionaryRef ServiceDictionary = IOServiceMatching(kIOHIDSystemClass);
-    if(!ServiceDictionary)
-    {
-        return;
-    }
-
-    io_service_t Service = IOServiceGetMatchingService(kIOMasterPortDefault, ServiceDictionary);
-    if(!Service)
-    {
-        CFRelease(ServiceDictionary);
-        return;
-    }
-
-    io_connect_t Connection;
-    kern_return_t Result = IOServiceOpen(Service, mach_task_self(), kIOHIDParamConnectType, &Connection);
-    IOObjectRelease(Service);
-
-    if(Result == KERN_SUCCESS)
-    {
-        IOHIDSetModifierLockState(Connection, kIOHIDCapsLockState, Enabled);
-        IOServiceClose(Connection);
-    }
-}
-
 internal CGEventRef
 KeyCallback(CGEventTapProxy Proxy, CGEventType Type, CGEventRef Event, void *Context)
 {
@@ -125,21 +95,10 @@ KeyCallback(CGEventTapProxy Proxy, CGEventType Type, CGEventRef Event, void *Con
             CGEventFlags Flags = CGEventGetFlags(Event);
             CGKeyCode Key = CGEventGetIntegerValueField(Event, kCGKeyboardEventKeycode);
 
-            if(Key == Modifier_Keycode_CapsLock)
+            if((Key == Modifier_Keycode_CapsLock) &&
+               (FindAndExecuteCapsLockHotkey(Flags, Key)))
             {
-                struct hotkey Eventkey = CreateHotkeyFromCGEvent(Flags, Key);
-                ModifierState.Valid = false;
-                if(FindAndExecuteHotkey(&Eventkey))
-                {
-                    /* NOTE(koekeishiya): If caps-lock got enabled, and was associated
-                     * with a command, we disable it again. */
-                    if(Flags & Event_Mask_CapsLock)
-                    {
-                        SetCapslockState(false);
-                    }
-
-                    return NULL;
-                }
+                return NULL;
             }
             else
             {

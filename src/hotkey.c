@@ -5,6 +5,10 @@
 #include <pthread.h>
 #include <mach/mach_time.h>
 
+#include <IOKit/IOKitLib.h>
+#include <IOKit/hidsystem/IOHIDLib.h>
+#include <IOKit/hidsystem/IOHIDParameter.h>
+
 #define internal static
 #define local_persist static
 #define CLOCK_PRECISION 1E-9
@@ -338,6 +342,63 @@ bool FindAndExecuteHotkey(struct hotkey *Eventkey)
 
     if(HotkeyExists(Eventkey, &Hotkey, ActiveBindingMode->Name))
     {
+        if(ExecuteHotkey(Hotkey))
+        {
+            Result = !HasFlags(Hotkey, Hotkey_Flag_Passthrough);
+        }
+    }
+
+    return Result;
+}
+
+internal void
+SetCapslockState(bool Enabled)
+{
+    CFMutableDictionaryRef ServiceDictionary = IOServiceMatching(kIOHIDSystemClass);
+    if(!ServiceDictionary)
+    {
+        return;
+    }
+
+    io_service_t Service = IOServiceGetMatchingService(kIOMasterPortDefault, ServiceDictionary);
+    if(!Service)
+    {
+        CFRelease(ServiceDictionary);
+        return;
+    }
+
+    io_connect_t Connection;
+    kern_return_t Result = IOServiceOpen(Service, mach_task_self(), kIOHIDParamConnectType, &Connection);
+    IOObjectRelease(Service);
+
+    if(Result == KERN_SUCCESS)
+    {
+        IOHIDSetModifierLockState(Connection, kIOHIDCapsLockState, Enabled);
+        IOServiceClose(Connection);
+    }
+}
+
+bool FindAndExecuteCapsLockHotkey(CGEventFlags Flags, CGKeyCode Key)
+{
+    struct hotkey Eventkey = CreateHotkeyFromCGEvent(Flags, Key);
+    ModifierState.Valid = false;
+
+    AddFlags(&Eventkey, Hotkey_Flag_Literal);
+    struct hotkey *Hotkey = NULL;
+
+    bool Result = (ConfigFlags & Config_Void_Bind)
+                ? ActiveBindingMode != &DefaultBindingMode
+                : false;
+
+    if(HotkeyExists(&Eventkey, &Hotkey, ActiveBindingMode->Name))
+    {
+        /* NOTE(koekeishiya): If caps-lock got enabled, and was associated
+         * with a command, we disable it again. */
+        if(Flags & Event_Mask_CapsLock)
+        {
+            SetCapslockState(false);
+        }
+
         if(ExecuteHotkey(Hotkey))
         {
             Result = !HasFlags(Hotkey, Hotkey_Flag_Passthrough);
