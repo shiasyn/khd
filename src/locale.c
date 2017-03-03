@@ -106,6 +106,8 @@ bool LayoutIndependentKeycode(char *Key, struct hotkey *Hotkey)
         Hotkey->Value = kVK_Space;
     else if(StringsAreEqual(Key, "backspace"))
         Hotkey->Value = kVK_Delete;
+    else if(StringsAreEqual(Key, "capslock"))
+        Hotkey->Value = Modifier_Keycode_CapsLock;
     else if(StringsAreEqual(Key, "delete"))
         Hotkey->Value = kVK_ForwardDelete;
     else if(StringsAreEqual(Key, "escape"))

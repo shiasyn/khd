@@ -6,6 +6,7 @@
 
 #define internal static
 
+#define Modifier_Keycode_CapsLock     0x39
 #define Modifier_Keycode_Left_Cmd     0x37
 #define Modifier_Keycode_Right_Cmd    0x36
 #define Modifier_Keycode_Left_Shift   0x38
@@ -24,6 +25,8 @@ enum config_option
 
 enum osx_event_mask
 {
+    Event_Mask_CapsLock = 0x00010000,
+
     Event_Mask_Alt = 0x00080000,
     Event_Mask_LAlt = 0x00000020,
     Event_Mask_RAlt = 0x00000040,

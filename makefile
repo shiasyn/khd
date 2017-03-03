@@ -1,4 +1,4 @@
-FRAMEWORKS     = -framework Carbon -framework Cocoa
+FRAMEWORKS     = -framework Carbon -framework Cocoa -framework IOKit
 BUILD_PATH     = ./bin
 BUILD_FLAGS    = -std=gnu89 -Wall -g
 KHD_SRC        = ./src/khd.m
