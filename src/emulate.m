@@ -1,5 +1,6 @@
 #include "emulate.h"
 #include "hotkey.h"
+#include "locale.h"
 
 void SendKeySequence(const char *Sequence)
 {
