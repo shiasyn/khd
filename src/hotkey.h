@@ -146,7 +146,4 @@ struct mode *GetBindingMode(const char *Mode);
 struct mode *GetLastBindingMode();
 void ActivateMode(const char *Mode);
 
-void SendKeySequence(const char *Sequence);
-void SendKeyPress(char *KeySym);
-
 #endif

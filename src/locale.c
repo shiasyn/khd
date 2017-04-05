@@ -1,6 +1,8 @@
 #include "locale.h"
 #include "hotkey.h"
+
 #include <Carbon/Carbon.h>
+#include <IOKit/hidsystem/ev_keymap.h>
 
 #define internal static
 #define local_persist static
@@ -94,6 +96,18 @@ bool OtherMouseButtonFromString(char *Temp, struct hotkey *Hotkey)
     return Result;
 }
 
+bool IsSystemDefinedKeycode(uint16_t Keycode)
+{
+    return (Keycode == NX_KEYTYPE_SOUND_UP) ||
+           (Keycode == NX_KEYTYPE_SOUND_DOWN) ||
+           (Keycode == NX_KEYTYPE_MUTE) ||
+           (Keycode == NX_KEYTYPE_PLAY) ||
+           (Keycode == NX_KEYTYPE_PREVIOUS) ||
+           (Keycode == NX_KEYTYPE_NEXT) ||
+           (Keycode == NX_KEYTYPE_BRIGHTNESS_UP) ||
+           (Keycode == NX_KEYTYPE_BRIGHTNESS_DOWN);
+}
+
 bool LayoutIndependentKeycode(char *Key, struct hotkey *Hotkey)
 {
     bool Result = true;
@@ -130,6 +144,22 @@ bool LayoutIndependentKeycode(char *Key, struct hotkey *Hotkey)
         Hotkey->Value = kVK_UpArrow;
     else if(StringsAreEqual(Key, "down"))
         Hotkey->Value = kVK_DownArrow;
+    else if(StringsAreEqual(Key, "volume_up"))
+        Hotkey->Value = NX_KEYTYPE_SOUND_UP;
+    else if(StringsAreEqual(Key, "volume_down"))
+        Hotkey->Value = NX_KEYTYPE_SOUND_DOWN;
+    else if(StringsAreEqual(Key, "mute"))
+        Hotkey->Value = NX_KEYTYPE_MUTE;
+    else if(StringsAreEqual(Key, "play"))
+        Hotkey->Value = NX_KEYTYPE_PLAY;
+    else if(StringsAreEqual(Key, "previous"))
+        Hotkey->Value = NX_KEYTYPE_PREVIOUS;
+    else if(StringsAreEqual(Key, "next"))
+        Hotkey->Value = NX_KEYTYPE_NEXT;
+    else if(StringsAreEqual(Key, "brightness_up"))
+        Hotkey->Value = NX_KEYTYPE_BRIGHTNESS_UP;
+    else if(StringsAreEqual(Key, "brightness_down"))
+        Hotkey->Value = NX_KEYTYPE_BRIGHTNESS_DOWN;
     else if(StringsAreEqual(Key, "f1"))
         Hotkey->Value = kVK_F1;
     else if(StringsAreEqual(Key, "f2"))

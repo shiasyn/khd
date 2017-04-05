@@ -15,6 +15,7 @@
 #include "tokenize.h"
 #include "parse.h"
 #include "hotkey.h"
+#include "emulate.h"
 #include "misc.h"
 
 #include "sharedworkspace.m"
@@ -23,6 +24,7 @@
 #include "tokenize.c"
 #include "parse.c"
 #include "hotkey.c"
+#include "emulate.m"
 
 #define internal static
 extern bool CGSIsSecureEventInputSet();
