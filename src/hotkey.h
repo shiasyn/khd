@@ -65,6 +65,8 @@ enum hotkey_flag
     Hotkey_Flag_Passthrough = (1 << 12),
     Hotkey_Flag_Literal = (1 << 13),
     Hotkey_Flag_MouseButton = (1 << 14),
+
+    Hotkey_Flag_SystemDefined = (1 << 15),
 };
 
 enum hotkey_type

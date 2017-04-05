@@ -93,7 +93,7 @@ void SendKeyPress(char *KeySym)
     ParseKeySymEmit(KeySym, &Hotkey);
     CGEventFlags Flags = CreateCGEventFlagsFromHotkeyFlags(Hotkey.Flags);
 
-    if(IsSystemDefinedKeycode(Hotkey.Value))
+    if(HasFlags(&Hotkey, Hotkey_Flag_SystemDefined))
     {
         CreateAndPostSystemKeyEvent(Flags, Hotkey.Value, true);
         CreateAndPostSystemKeyEvent(Flags, Hotkey.Value, false);

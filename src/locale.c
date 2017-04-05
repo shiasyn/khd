@@ -96,112 +96,55 @@ bool OtherMouseButtonFromString(char *Temp, struct hotkey *Hotkey)
     return Result;
 }
 
-bool IsSystemDefinedKeycode(uint16_t Keycode)
-{
-    return (Keycode == NX_KEYTYPE_SOUND_UP) ||
-           (Keycode == NX_KEYTYPE_SOUND_DOWN) ||
-           (Keycode == NX_KEYTYPE_MUTE) ||
-           (Keycode == NX_KEYTYPE_PLAY) ||
-           (Keycode == NX_KEYTYPE_PREVIOUS) ||
-           (Keycode == NX_KEYTYPE_NEXT) ||
-           (Keycode == NX_KEYTYPE_BRIGHTNESS_UP) ||
-           (Keycode == NX_KEYTYPE_BRIGHTNESS_DOWN);
-}
-
 bool LayoutIndependentKeycode(char *Key, struct hotkey *Hotkey)
 {
     bool Result = true;
 
-    if(StringsAreEqual(Key, "return"))
-        Hotkey->Value = kVK_Return;
-    else if(StringsAreEqual(Key, "tab"))
-        Hotkey->Value = kVK_Tab;
-    else if(StringsAreEqual(Key, "space"))
-        Hotkey->Value = kVK_Space;
-    else if(StringsAreEqual(Key, "backspace"))
-        Hotkey->Value = kVK_Delete;
-    else if(StringsAreEqual(Key, "capslock"))
-        Hotkey->Value = Modifier_Keycode_CapsLock;
-    else if(StringsAreEqual(Key, "delete"))
-        Hotkey->Value = kVK_ForwardDelete;
-    else if(StringsAreEqual(Key, "escape"))
-        Hotkey->Value =  kVK_Escape;
-    else if(StringsAreEqual(Key, "home"))
-        Hotkey->Value =  kVK_Home;
-    else if(StringsAreEqual(Key, "end"))
-        Hotkey->Value =  kVK_End;
-    else if(StringsAreEqual(Key, "pageup"))
-        Hotkey->Value =  kVK_PageUp;
-    else if(StringsAreEqual(Key, "pagedown"))
-        Hotkey->Value =  kVK_PageDown;
-    else if(StringsAreEqual(Key, "help"))
-        Hotkey->Value =  kVK_Help;
-    else if(StringsAreEqual(Key, "left"))
-        Hotkey->Value =  kVK_LeftArrow;
-    else if(StringsAreEqual(Key, "right"))
-        Hotkey->Value =  kVK_RightArrow;
-    else if(StringsAreEqual(Key, "up"))
-        Hotkey->Value = kVK_UpArrow;
-    else if(StringsAreEqual(Key, "down"))
-        Hotkey->Value = kVK_DownArrow;
-    else if(StringsAreEqual(Key, "volume_up"))
-        Hotkey->Value = NX_KEYTYPE_SOUND_UP;
-    else if(StringsAreEqual(Key, "volume_down"))
-        Hotkey->Value = NX_KEYTYPE_SOUND_DOWN;
-    else if(StringsAreEqual(Key, "mute"))
-        Hotkey->Value = NX_KEYTYPE_MUTE;
-    else if(StringsAreEqual(Key, "play"))
-        Hotkey->Value = NX_KEYTYPE_PLAY;
-    else if(StringsAreEqual(Key, "previous"))
-        Hotkey->Value = NX_KEYTYPE_PREVIOUS;
-    else if(StringsAreEqual(Key, "next"))
-        Hotkey->Value = NX_KEYTYPE_NEXT;
-    else if(StringsAreEqual(Key, "brightness_up"))
-        Hotkey->Value = NX_KEYTYPE_BRIGHTNESS_UP;
-    else if(StringsAreEqual(Key, "brightness_down"))
-        Hotkey->Value = NX_KEYTYPE_BRIGHTNESS_DOWN;
-    else if(StringsAreEqual(Key, "f1"))
-        Hotkey->Value = kVK_F1;
-    else if(StringsAreEqual(Key, "f2"))
-        Hotkey->Value = kVK_F2;
-    else if(StringsAreEqual(Key, "f3"))
-        Hotkey->Value = kVK_F3;
-    else if(StringsAreEqual(Key, "f4"))
-        Hotkey->Value = kVK_F4;
-    else if(StringsAreEqual(Key, "f5"))
-        Hotkey->Value = kVK_F5;
-    else if(StringsAreEqual(Key, "f6"))
-        Hotkey->Value = kVK_F6;
-    else if(StringsAreEqual(Key, "f7"))
-        Hotkey->Value = kVK_F7;
-    else if(StringsAreEqual(Key, "f8"))
-        Hotkey->Value = kVK_F8;
-    else if(StringsAreEqual(Key, "f9"))
-        Hotkey->Value = kVK_F9;
-    else if(StringsAreEqual(Key, "f10"))
-        Hotkey->Value = kVK_F10;
-    else if(StringsAreEqual(Key, "f11"))
-        Hotkey->Value = kVK_F11;
-    else if(StringsAreEqual(Key, "f12"))
-        Hotkey->Value = kVK_F12;
-    else if(StringsAreEqual(Key, "f13"))
-        Hotkey->Value = kVK_F13;
-    else if(StringsAreEqual(Key, "f14"))
-        Hotkey->Value = kVK_F14;
-    else if(StringsAreEqual(Key, "f15"))
-        Hotkey->Value = kVK_F15;
-    else if(StringsAreEqual(Key, "f16"))
-        Hotkey->Value = kVK_F16;
-    else if(StringsAreEqual(Key, "f17"))
-        Hotkey->Value = kVK_F17;
-    else if(StringsAreEqual(Key, "f18"))
-        Hotkey->Value = kVK_F18;
-    else if(StringsAreEqual(Key, "f19"))
-        Hotkey->Value = kVK_F19;
-    else if(StringsAreEqual(Key, "f20"))
-        Hotkey->Value = kVK_F20;
-    else
-        Result = false;
+    if(StringsAreEqual(Key, "return"))               { Hotkey->Value = kVK_Return; }
+    else if(StringsAreEqual(Key, "tab"))             { Hotkey->Value = kVK_Tab; }
+    else if(StringsAreEqual(Key, "space"))           { Hotkey->Value = kVK_Space; }
+    else if(StringsAreEqual(Key, "backspace"))       { Hotkey->Value = kVK_Delete; }
+    else if(StringsAreEqual(Key, "capslock"))        { Hotkey->Value = Modifier_Keycode_CapsLock; }
+    else if(StringsAreEqual(Key, "delete"))          { Hotkey->Value = kVK_ForwardDelete; }
+    else if(StringsAreEqual(Key, "escape"))          { Hotkey->Value =  kVK_Escape; }
+    else if(StringsAreEqual(Key, "home"))            { Hotkey->Value =  kVK_Home; }
+    else if(StringsAreEqual(Key, "end"))             { Hotkey->Value =  kVK_End; }
+    else if(StringsAreEqual(Key, "pageup"))          { Hotkey->Value =  kVK_PageUp; }
+    else if(StringsAreEqual(Key, "pagedown"))        { Hotkey->Value =  kVK_PageDown; }
+    else if(StringsAreEqual(Key, "help"))            { Hotkey->Value =  kVK_Help; }
+    else if(StringsAreEqual(Key, "left"))            { Hotkey->Value =  kVK_LeftArrow; }
+    else if(StringsAreEqual(Key, "right"))           { Hotkey->Value =  kVK_RightArrow; }
+    else if(StringsAreEqual(Key, "up"))              { Hotkey->Value = kVK_UpArrow; }
+    else if(StringsAreEqual(Key, "down"))            { Hotkey->Value = kVK_DownArrow; }
+    else if(StringsAreEqual(Key, "f1"))              { Hotkey->Value = kVK_F1; }
+    else if(StringsAreEqual(Key, "f2"))              { Hotkey->Value = kVK_F2; }
+    else if(StringsAreEqual(Key, "f3"))              { Hotkey->Value = kVK_F3; }
+    else if(StringsAreEqual(Key, "f4"))              { Hotkey->Value = kVK_F4; }
+    else if(StringsAreEqual(Key, "f5"))              { Hotkey->Value = kVK_F5; }
+    else if(StringsAreEqual(Key, "f6"))              { Hotkey->Value = kVK_F6; }
+    else if(StringsAreEqual(Key, "f7"))              { Hotkey->Value = kVK_F7; }
+    else if(StringsAreEqual(Key, "f8"))              { Hotkey->Value = kVK_F8; }
+    else if(StringsAreEqual(Key, "f9"))              { Hotkey->Value = kVK_F9; }
+    else if(StringsAreEqual(Key, "f10"))             { Hotkey->Value = kVK_F10; }
+    else if(StringsAreEqual(Key, "f11"))             { Hotkey->Value = kVK_F11; }
+    else if(StringsAreEqual(Key, "f12"))             { Hotkey->Value = kVK_F12; }
+    else if(StringsAreEqual(Key, "f13"))             { Hotkey->Value = kVK_F13; }
+    else if(StringsAreEqual(Key, "f14"))             { Hotkey->Value = kVK_F14; }
+    else if(StringsAreEqual(Key, "f15"))             { Hotkey->Value = kVK_F15; }
+    else if(StringsAreEqual(Key, "f16"))             { Hotkey->Value = kVK_F16; }
+    else if(StringsAreEqual(Key, "f17"))             { Hotkey->Value = kVK_F17; }
+    else if(StringsAreEqual(Key, "f18"))             { Hotkey->Value = kVK_F18; }
+    else if(StringsAreEqual(Key, "f19"))             { Hotkey->Value = kVK_F19; }
+    else if(StringsAreEqual(Key, "f20"))             { Hotkey->Value = kVK_F20; }
+    else if(StringsAreEqual(Key, "volume_up"))       { Hotkey->Value = NX_KEYTYPE_SOUND_UP; AddFlags(Hotkey, Hotkey_Flag_SystemDefined); }
+    else if(StringsAreEqual(Key, "volume_down"))     { Hotkey->Value = NX_KEYTYPE_SOUND_DOWN; AddFlags(Hotkey, Hotkey_Flag_SystemDefined); }
+    else if(StringsAreEqual(Key, "mute"))            { Hotkey->Value = NX_KEYTYPE_MUTE; AddFlags(Hotkey, Hotkey_Flag_SystemDefined); }
+    else if(StringsAreEqual(Key, "play"))            { Hotkey->Value = NX_KEYTYPE_PLAY; AddFlags(Hotkey, Hotkey_Flag_SystemDefined); }
+    else if(StringsAreEqual(Key, "previous"))        { Hotkey->Value = NX_KEYTYPE_PREVIOUS; AddFlags(Hotkey, Hotkey_Flag_SystemDefined); }
+    else if(StringsAreEqual(Key, "next"))            { Hotkey->Value = NX_KEYTYPE_NEXT; AddFlags(Hotkey, Hotkey_Flag_SystemDefined); }
+    else if(StringsAreEqual(Key, "brightness_up"))   { Hotkey->Value = NX_KEYTYPE_BRIGHTNESS_UP; AddFlags(Hotkey, Hotkey_Flag_SystemDefined); }
+    else if(StringsAreEqual(Key, "brightness_down")) { Hotkey->Value = NX_KEYTYPE_BRIGHTNESS_DOWN; AddFlags(Hotkey, Hotkey_Flag_SystemDefined); }
+    else                                             { Result = false; }
 
     return Result;
 }
