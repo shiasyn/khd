@@ -32,7 +32,7 @@ extern bool CGSIsSecureEventInputSet();
 
 internal CFMachPortRef KhdEventTap;
 internal unsigned MajorVersion = 2;
-internal unsigned MinorVersion = 1;
+internal unsigned MinorVersion = 2;
 internal unsigned PatchVersion = 1;
 
 struct modifier_state ModifierState;
