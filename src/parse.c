@@ -264,32 +264,19 @@ AddHotkeyModifier(char *Mod, int Length, struct hotkey *Hotkey)
     char *Modifier = AllocAndCopyString(Mod, Length);
     printf("Token_Modifier: %s\n", Modifier);
 
-    if(StringsAreEqual(Modifier, "cmd"))
-        AddFlags(Hotkey, Hotkey_Flag_Cmd);
-    else if(StringsAreEqual(Modifier, "lcmd"))
-        AddFlags(Hotkey, Hotkey_Flag_LCmd);
-    else if(StringsAreEqual(Modifier, "rcmd"))
-        AddFlags(Hotkey, Hotkey_Flag_RCmd);
-    else if(StringsAreEqual(Modifier, "alt"))
-        AddFlags(Hotkey, Hotkey_Flag_Alt);
-    else if(StringsAreEqual(Modifier, "lalt"))
-        AddFlags(Hotkey, Hotkey_Flag_LAlt);
-    else if(StringsAreEqual(Modifier, "ralt"))
-        AddFlags(Hotkey, Hotkey_Flag_RAlt);
-    else if(StringsAreEqual(Modifier, "shift"))
-        AddFlags(Hotkey, Hotkey_Flag_Shift);
-    else if(StringsAreEqual(Modifier, "lshift"))
-        AddFlags(Hotkey, Hotkey_Flag_LShift);
-    else if(StringsAreEqual(Modifier, "rshift"))
-        AddFlags(Hotkey, Hotkey_Flag_RShift);
-    else if(StringsAreEqual(Modifier, "ctrl"))
-        AddFlags(Hotkey, Hotkey_Flag_Control);
-    else if(StringsAreEqual(Modifier, "lctrl"))
-        AddFlags(Hotkey, Hotkey_Flag_LControl);
-    else if(StringsAreEqual(Modifier, "rctrl"))
-        AddFlags(Hotkey, Hotkey_Flag_RControl);
-    else
-        SetHotkeyMode(Hotkey, Modifier);
+    if     (StringsAreEqual(Modifier, "cmd"))    AddFlags(Hotkey, Hotkey_Flag_Cmd);
+    else if(StringsAreEqual(Modifier, "lcmd"))   AddFlags(Hotkey, Hotkey_Flag_LCmd);
+    else if(StringsAreEqual(Modifier, "rcmd"))   AddFlags(Hotkey, Hotkey_Flag_RCmd);
+    else if(StringsAreEqual(Modifier, "alt"))    AddFlags(Hotkey, Hotkey_Flag_Alt);
+    else if(StringsAreEqual(Modifier, "lalt"))   AddFlags(Hotkey, Hotkey_Flag_LAlt);
+    else if(StringsAreEqual(Modifier, "ralt"))   AddFlags(Hotkey, Hotkey_Flag_RAlt);
+    else if(StringsAreEqual(Modifier, "shift"))  AddFlags(Hotkey, Hotkey_Flag_Shift);
+    else if(StringsAreEqual(Modifier, "lshift")) AddFlags(Hotkey, Hotkey_Flag_LShift);
+    else if(StringsAreEqual(Modifier, "rshift")) AddFlags(Hotkey, Hotkey_Flag_RShift);
+    else if(StringsAreEqual(Modifier, "ctrl"))   AddFlags(Hotkey, Hotkey_Flag_Control);
+    else if(StringsAreEqual(Modifier, "lctrl"))  AddFlags(Hotkey, Hotkey_Flag_LControl);
+    else if(StringsAreEqual(Modifier, "rctrl"))  AddFlags(Hotkey, Hotkey_Flag_RControl);
+    else                                         SetHotkeyMode(Hotkey, Modifier);
 
     free(Modifier);
 }
