@@ -83,14 +83,6 @@ Execute(char *Command)
     }
 }
 
-internal inline void
-ExecuteKwmBorderCommand()
-{
-    char KwmCommand[64] = "kwmc config border focused color ";
-    strcat(KwmCommand, ActiveBindingMode->Color);
-    Execute(KwmCommand);
-}
-
 internal inline bool
 VerifyHotkeyType(struct hotkey *Hotkey)
 {
@@ -159,9 +151,8 @@ void ActivateMode(const char *Mode)
         printf("Activate mode: %s\n", Mode);
         ActiveBindingMode = BindingMode;
 
-        if((ConfigFlags & Config_Kwm_Border) &&
-           (ActiveBindingMode->Color))
-            ExecuteKwmBorderCommand();
+        if(ActiveBindingMode->OnEnterCommand)
+            Execute(ActiveBindingMode->OnEnterCommand);
 
         if(ActiveBindingMode->Prefix)
             UpdatePrefixTimer();

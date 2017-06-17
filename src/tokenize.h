@@ -90,8 +90,8 @@ IsHexadecimal(char C)
     return Result;
 }
 
-
 struct token GetToken(struct tokenizer *Tokenizer);
+struct token ReadTilEndOfLine(struct tokenizer *Tokenizer);
 bool RequireToken(struct tokenizer *Tokenizer, enum token_type DesiredType);
 bool TokenEquals(struct token Token, const char *Match);
 

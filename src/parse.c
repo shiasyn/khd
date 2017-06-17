@@ -149,8 +149,8 @@ DestroyBindingMode(struct mode *BindingMode)
     if(BindingMode->Name)
         free(BindingMode->Name);
 
-    if(BindingMode->Color)
-        free(BindingMode->Color);
+    if(BindingMode->OnEnterCommand)
+        free(BindingMode->OnEnterCommand);
 
     if(BindingMode->Restore)
         free(BindingMode->Restore);
@@ -177,10 +177,10 @@ ReloadConfig()
             DefaultBindingMode.Hotkey = NULL;
         }
 
-        if(DefaultBindingMode.Color)
+        if(DefaultBindingMode.OnEnterCommand)
         {
-            free(DefaultBindingMode.Color);
-            DefaultBindingMode.Color = NULL;
+            free(DefaultBindingMode.OnEnterCommand);
+            DefaultBindingMode.OnEnterCommand = NULL;
         }
 
         if(DefaultBindingMode.Restore)
@@ -423,11 +423,11 @@ ParseKhdModeProperties(struct token *TokenMode, struct tokenizer *Tokenizer)
             };
         }
     }
-    else if(TokenEquals(Token, "color"))
+    else if(TokenEquals(Token, "on_enter"))
     {
-        struct token Token = GetToken(Tokenizer);
-        BindingMode->Color = AllocAndCopyString(Token.Text, Token.Length);
-        printf("Prefix Color: %s\n", BindingMode->Color);
+        struct token Token = ReadTilEndOfLine(Tokenizer);
+        BindingMode->OnEnterCommand = AllocAndCopyString(Token.Text, Token.Length);
+        printf("Prefix OnEnterCommand: %s\n", BindingMode->OnEnterCommand);
     }
     else if(TokenEquals(Token, "restore"))
     {
@@ -437,24 +437,6 @@ ParseKhdModeProperties(struct token *TokenMode, struct tokenizer *Tokenizer)
     }
 
     free(Mode);
-}
-
-internal void
-ParseKhdKwmCompatibility(struct tokenizer *Tokenizer)
-{
-    struct token Token = GetToken(Tokenizer);
-    if(TokenEquals(Token, "on"))
-    {
-        ConfigFlags |= Config_Kwm_Border;
-    }
-    else if(TokenEquals(Token, "off"))
-    {
-        ConfigFlags &= ~Config_Kwm_Border;
-    }
-    else
-    {
-        Error("Line#%d: Unexpected token '%.*s'\n", Tokenizer->Line, Token.Length, Token.Text);
-    }
 }
 
 internal void
@@ -537,10 +519,6 @@ ParseKhd(struct tokenizer *Tokenizer, int SockFD)
             if(TokenEquals(Token, "reload"))
             {
                 ReloadConfig();
-            }
-            else if(TokenEquals(Token, "kwm"))
-            {
-                ParseKhdKwmCompatibility(Tokenizer);
             }
             else if(TokenEquals(Token, "void_unlisted_bind"))
             {

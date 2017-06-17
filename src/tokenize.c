@@ -38,6 +38,24 @@ bool TokenEquals(struct token Token, const char *Match)
 }
 
 struct token
+ReadTilEndOfLine(struct tokenizer *Tokenizer)
+{
+    struct token Token = {};
+    EatAllWhiteSpace(Tokenizer);
+    Token.Text = Tokenizer->At;
+
+    while((Tokenizer->At[0]) &&
+          (!IsEndOfLine(Tokenizer->At[0])))
+    {
+        ++Tokenizer->At;
+    }
+
+    Token.Type = Token_Unknown;
+    Token.Length = Tokenizer->At - Token.Text;
+    return Token;
+}
+
+struct token
 GetToken(struct tokenizer *Tokenizer)
 {
     EatAllWhiteSpace(Tokenizer);

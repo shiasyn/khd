@@ -19,7 +19,6 @@
 
 enum config_option
 {
-    Config_Kwm_Border = (1 << 0),
     Config_Void_Bind = (1 << 1),
 };
 
@@ -81,12 +80,13 @@ struct hotkey;
 struct mode
 {
     char *Name;
-    char *Color;
 
     bool Prefix;
     double Timeout;
     char *Restore;
     long long Time;
+
+    char *OnEnterCommand;
 
     struct hotkey *Hotkey;
     struct mode *Next;
