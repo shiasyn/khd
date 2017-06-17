@@ -31,9 +31,9 @@ extern bool CGSIsSecureEventInputSet();
 #define IsSecureKeyboardEntryEnabled CGSIsSecureEventInputSet
 
 internal CFMachPortRef KhdEventTap;
-internal unsigned MajorVersion = 2;
-internal unsigned MinorVersion = 2;
-internal unsigned PatchVersion = 2;
+internal unsigned MajorVersion = 3;
+internal unsigned MinorVersion = 0;
+internal unsigned PatchVersion = 0;
 
 struct modifier_state ModifierState;
 struct mode DefaultBindingMode;
