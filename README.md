@@ -65,7 +65,7 @@ See [sample config](https://github.com/koekeishiya/khd/blob/master/examples/khdr
 
 See [#1](https://github.com/koekeishiya/khd/issues/1) for information regarding keycodes.
 
-Customize mode:
+Customize key-related settings:
 ```
 # modifier only binds consist of the sequence mod_pressed -> mod_released
 # and must be performed within a given timeframe.
@@ -76,7 +76,10 @@ khd mod_trigger_timeout 0.1
 # does not correspond to a valid bind will be suppressed.
 # this is enabled by default, and must be explicitly set to 'off'.
 khd void_unlisted_bind off
+```
 
+Customize mode settings:
+```
 # enable prefix mode
 khd mode my_mode prefix on
 
@@ -86,14 +89,8 @@ khd mode my_mode timeout 0.75
 # activate mode on timeout (defaults to 'default')
 khd mode my_mode restore some_other_mode
 
-# specify color for this mode (kwm compatibility mode)
-khd mode my_mode color 0xAARRGGBB
-```
-
-Compatibility with Kwm:
-```
-# set color of focused border to color of active mode
-khd kwm on
+# execute "command" using "$SHELL -c" when this mode is activated
+khd mode my_mode on_enter command
 ```
 
 ## Development
