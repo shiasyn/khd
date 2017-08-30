@@ -1,24 +1,42 @@
 #ifndef KHD_TOKENIZE_H
 #define KHD_TOKENIZE_H
 
-#define internal static
+#define array_count(a) (sizeof((a)) / sizeof(*(a)))
+static const char *modifier_flags_str[] =
+{
+    "alt",   "lalt",    "ralt",
+    "shift", "lshift",  "rshift",
+    "cmd",   "lcmd",    "rcmd",
+    "ctrl",  "lctrl",   "rctrl",
+};
+
+static const char *literal_keycode_str[] =
+{
+    "return",     "tab",        "space",
+    "backspace",  "delete",     "escape",
+    "home",       "end",        "pageup",
+    "pagedown",   "help",       "left",
+    "right",      "up",         "down",
+    "f1",         "f2",         "f3",
+    "f4",         "f5",         "f6",
+    "f7",         "f8",         "f9",
+    "f10",        "f11",        "f12",
+    "f13",        "f14",        "f15",
+    "f16",        "f17",        "f18",
+    "f19",        "f20",
+};
 
 enum token_type
 {
-    Token_Identifier,
     Token_Command,
+    Token_Modifier,
     Token_Literal,
-    Token_List,
-    Token_Negate,
-    Token_Passthrough,
+    Token_Key_Hex,
+    Token_Key,
 
     Token_Plus,
-    Token_OpenBrace,
-    Token_CloseBrace,
-
-    Token_Hex,
-    Token_Digit,
-    Token_Comment,
+    Token_Dash,
+    Token_Arrow,
 
     Token_Unknown,
     Token_EndOfStream,
@@ -26,73 +44,25 @@ enum token_type
 
 struct token
 {
-    char *Text;
-    unsigned Length;
-    enum token_type Type;
+    enum token_type type;
+    char *text;
+    unsigned length;
+
+    unsigned line;
+    unsigned cursor;
 };
 
 struct tokenizer
 {
-    char *At;
-    unsigned Line;
+    char *buffer;
+    char *at;
+    unsigned line;
+    unsigned cursor;
 };
 
-internal inline bool
-IsDot(char C)
-{
-    bool Result = ((C == '.') ||
-                   (C == ','));
-    return Result;
-}
-
-internal inline bool
-IsEndOfLine(char C)
-{
-    bool Result = ((C == '\n') ||
-                   (C == '\r'));
-
-    return Result;
-}
-
-internal inline bool
-IsWhiteSpace(char C)
-{
-    bool Result = ((C == ' ') ||
-                   (C == '\t') ||
-                   IsEndOfLine(C));
-
-    return Result;
-}
-
-internal inline bool
-IsAlpha(char C)
-{
-    bool Result = (((C >= 'a') && (C <= 'z')) ||
-                   ((C >= 'A') && (C <= 'Z')) ||
-                   ((C == '_')));
-
-    return Result;
-}
-
-internal inline bool
-IsNumeric(char C)
-{
-    bool Result = ((C >= '0') && (C <= '9'));
-    return Result;
-}
-
-internal inline bool
-IsHexadecimal(char C)
-{
-    bool Result = (((C >= 'a') && (C <= 'f')) ||
-                   ((C >= 'A') && (C <= 'F')) ||
-                   (IsNumeric(C)));
-    return Result;
-}
-
-struct token GetToken(struct tokenizer *Tokenizer);
-struct token ReadTilEndOfLine(struct tokenizer *Tokenizer);
-bool RequireToken(struct tokenizer *Tokenizer, enum token_type DesiredType);
-bool TokenEquals(struct token Token, const char *Match);
+void tokenizer_init(struct tokenizer *tokenizer, char *buffer);
+struct token get_token(struct tokenizer *tokenizer);
+struct token peek_token(struct tokenizer tokenizer);
+int token_equals(struct token token, const char *match);
 
 #endif

@@ -2,645 +2,342 @@
 #include "tokenize.h"
 #include "locale.h"
 #include "hotkey.h"
-#include "daemon.h"
-#include "misc.h"
+#include "hashtable.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define internal static
-#define MOUSE_BUTTON_PREFIX "button"
-#define MOUSE_BUTTON_PREFIX_LENGTH (sizeof(MOUSE_BUTTON_PREFIX) - 1)
 
-extern struct modifier_state ModifierState;
-extern struct mode DefaultBindingMode;
-extern struct mode *ActiveBindingMode;
-extern char *ConfigFile;
-extern uint32_t ConfigFlags;
-
-internal inline unsigned
-HexToInt(char *Hex)
+internal char *
+read_file(const char *file)
 {
-    uint32_t Result;
-    sscanf(Hex, "%x", &Result);
-    return Result;
-}
+    unsigned length;
+    char *buffer = NULL;
+    FILE *handle = fopen(file, "r");
 
-internal inline double
-StringToDouble(char *String)
-{
-    double Result;
-    sscanf(String, "%lf", &Result);
-    return Result;
+    if(handle)
+    {
+        fseek(handle, 0, SEEK_END);
+        length = ftell(handle);
+        fseek(handle, 0, SEEK_SET);
+        buffer = malloc(length + 1);
+        fread(buffer, length, 1, handle);
+        buffer[length] = '\0';
+        fclose(handle);
+    }
+
+    return buffer;
 }
 
 internal char *
-AllocAndCopyString(char *Text, int Length)
+copy_string_count(char *s, int length)
 {
-    char *Result = (char *) malloc(Length + 1);
-    strncpy(Result, Text, Length);
-    Result[Length] = '\0';
-
-    return Result;
+    char *result = malloc(length + 1);
+    memcpy(result, s, length);
+    result[length] = '\0';
+    return result;
 }
 
-internal char **
-AllocAndCopyList(char *Text, int Length)
+internal uint32_t
+keycode_from_hex(char *hex)
 {
-    int Count = 1;
-    for(int Index = 0; Index < Length; ++Index)
-    {
-        if(Text[Index] == ',')
-            ++Count;
-    }
-
-    char *Temp = AllocAndCopyString(Text, Length);
-    char **Result = (char **) malloc(Count * sizeof(char *) + 1);
-    Result[Count] = NULL;
-
-    char *Token = strtok(Temp, ",");
-    while(Token)
-    {
-        while(isspace(*Token))
-            ++Token;
-
-        char *End = Token + strlen(Token) - 1;
-        while(End > Token && isspace(*End))
-            --End;
-
-        *(End + 1) = '\0';
-        Result[--Count] = strdup(Token);
-        Token = strtok(NULL, ",");
-    }
-
-    free(Temp);
-    return Result;
+    uint32_t result;
+    sscanf(hex, "%x", &result);
+    return result;
 }
 
-internal inline struct hotkey *
-AllocHotkey()
+internal char *
+parse_command(struct parser *parser)
 {
-    struct hotkey *Hotkey = (struct hotkey *) malloc(sizeof(struct hotkey));
-    memset(Hotkey, 0, sizeof(struct hotkey));
-    Hotkey->Mode = strdup("default");
-
-    return Hotkey;
+    struct token command = parser_previous(parser);
+    char *result = copy_string_count(command.text, command.length);
+    printf("\tcmd: '%s'\n", result);
+    return result;
 }
 
-internal inline void
-AppendHotkey(struct hotkey *Hotkey)
+internal uint32_t
+parse_key_hex(struct parser *parser)
 {
-    struct mode *BindingMode = GetBindingMode(Hotkey->Mode);
-    if(!BindingMode)
-    {
-        BindingMode = CreateBindingMode(Hotkey->Mode);
-    }
-
-    if(BindingMode->Hotkey)
-    {
-        struct hotkey *Last = BindingMode->Hotkey;
-        while(Last->Next)
-            Last = Last->Next;
-
-        Last->Next = Hotkey;
-    }
-    else
-    {
-        BindingMode->Hotkey = Hotkey;
-    }
+    struct token key = parser_previous(parser);
+    char *hex = copy_string_count(key.text, key.length);
+    uint32_t keycode = keycode_from_hex(hex);
+    free(hex);
+    printf("\tkey: '%.*s' (0x%02x)\n", key.length, key.text, keycode);
+    return keycode;
 }
 
-internal inline void
-DestroyHotkey(struct hotkey *Hotkey)
+internal uint32_t
+parse_key(struct parser *parser)
 {
-    if(Hotkey->Next)
-        DestroyHotkey(Hotkey->Next);
+    uint32_t keycode;
+    struct token key = parser_previous(parser);
+    keycode = keycode_from_char(*key.text);
+    printf("\tkey: '%c' (0x%02x)\n", *key.text, keycode);
+    return keycode;
+}
 
-    if(Hotkey->Mode)
-        free(Hotkey->Mode);
+internal uint32_t literal_keycode_value[] =
+{
+    kVK_Return,     kVK_Tab,           kVK_Space,
+    kVK_Delete,     kVK_ForwardDelete, kVK_Escape,
+    kVK_Home,       kVK_End,           kVK_PageUp,
+    kVK_PageDown,   kVK_Help,          kVK_LeftArrow,
+    kVK_RightArrow, kVK_UpArrow,       kVK_DownArrow,
+    kVK_F1,         kVK_F2,            kVK_F3,
+    kVK_F4,         kVK_F5,            kVK_F6,
+    kVK_F7,         kVK_F8,            kVK_F9,
+    kVK_F10,        kVK_F11,           kVK_F12,
+    kVK_F13,        kVK_F14,           kVK_F15,
+    kVK_F16,        kVK_F17,           kVK_F18,
+    kVK_F19,        kVK_F20,
+};
 
-    if(Hotkey->Command)
-        free(Hotkey->Command);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wsometimes-uninitialized"
+// NOTE(koekeishiya): shut up compiler !!!
+// if we get to this point, we already KNOW that the input is valid..
+internal uint32_t
+parse_key_literal(struct parser *parser)
+{
+    uint32_t keycode;
+    struct token key = parser_previous(parser);
 
-    if(Hotkey->App)
-    {
-        char **App = Hotkey->App;
-        while(*App)
-        {
-            free(*App++);
+    // NOTE(koekeishiya): Might want to replace this mapping with a hashtable
+    for(int i = 0; i < array_count(literal_keycode_str); ++i) {
+        if(token_equals(key, literal_keycode_str[i])) {
+            keycode = literal_keycode_value[i];
+            printf("\tkey: '%.*s' (0x%02x)\n", key.length, key.text, keycode);
+            break;
         }
-
-        free(Hotkey->App);
     }
 
-    free(Hotkey);
+    return keycode;
 }
+#pragma clang diagnostic pop
 
-internal inline void
-DestroyBindingMode(struct mode *BindingMode)
+internal enum hotkey_flag modifier_flags_value[] =
 {
-    if(BindingMode->Next)
-        DestroyBindingMode(BindingMode->Next);
+    Hotkey_Flag_Alt,        Hotkey_Flag_LAlt,       Hotkey_Flag_RAlt,
+    Hotkey_Flag_Shift,      Hotkey_Flag_LShift,     Hotkey_Flag_RShift,
+    Hotkey_Flag_Cmd,        Hotkey_Flag_LCmd,       Hotkey_Flag_RCmd,
+    Hotkey_Flag_Control,    Hotkey_Flag_LControl,   Hotkey_Flag_RControl,
+};
 
-    if(BindingMode->Hotkey)
-        DestroyHotkey(BindingMode->Hotkey);
-
-    if(BindingMode->Name)
-        free(BindingMode->Name);
-
-    if(BindingMode->OnEnterCommand)
-        free(BindingMode->OnEnterCommand);
-
-    if(BindingMode->Restore)
-        free(BindingMode->Restore);
-
-    free(BindingMode);
-}
-
-internal void
-ReloadConfig()
+internal uint32_t
+parse_modifier(struct parser *parser)
 {
-    char *Contents = ReadFile(ConfigFile);
-    if(Contents)
-    {
-        printf("Khd: Reloading config '%s'\n", ConfigFile);
-        if(DefaultBindingMode.Next)
-        {
-            DestroyBindingMode(DefaultBindingMode.Next);
-            DefaultBindingMode.Next = NULL;
-        }
+    uint32_t flags = 0;
+    struct token modifier = parser_previous(parser);
 
-        if(DefaultBindingMode.Hotkey)
-        {
-            DestroyHotkey(DefaultBindingMode.Hotkey);
-            DefaultBindingMode.Hotkey = NULL;
+    // NOTE(koekeishiya): Might want to replace this mapping with a hashtable
+    for(int i = 0; i < array_count(modifier_flags_str); ++i) {
+        if(token_equals(modifier, modifier_flags_str[i])) {
+            flags |= modifier_flags_value[i];
+            printf("\tmod: '%s'\n", modifier_flags_str[i]);
+            break;
         }
-
-        if(DefaultBindingMode.OnEnterCommand)
-        {
-            free(DefaultBindingMode.OnEnterCommand);
-            DefaultBindingMode.OnEnterCommand = NULL;
-        }
-
-        if(DefaultBindingMode.Restore)
-        {
-            free(DefaultBindingMode.Restore);
-            DefaultBindingMode.Restore = NULL;
-        }
-
-        ParseConfig(Contents);
-        ActivateMode("default");
     }
+
+    if(parser_match(parser, Token_Plus)) {
+        if(parser_match(parser, Token_Modifier)) {
+            flags |= parse_modifier(parser);
+        } else {
+            fprintf(stderr, "(#%d:%d) expected modifier, but got '%.*s'\n",
+                    parser->current_token.line, parser->current_token.cursor,
+                    parser->current_token.length, parser->current_token.text);
+            parser->error = true;
+        }
+    }
+
+    return flags;
 }
 
-internal void
-StripTrailingWhiteSpace(struct token *Token)
+internal struct parse_result
+parse_hotkey(struct parser *parser)
 {
-    while(IsWhiteSpace(Token->Text[Token->Length-1]))
-        --Token->Length;
+    struct parse_result result = {};
+
+    struct hotkey *hotkey = malloc(sizeof(struct hotkey));
+    int found_modifier;
+
+    printf("(#%d) hotkey :: {\n", parser->current_token.line);
+
+    /*
+     * // TODO(koekeishiya): implement these functions and required changes to lexer
+     *
+     * int found_mode;
+     * if(parser_match(parser, Token_Open_Bracket)) {
+     *     // NOTE(koekeishiya): comma separated list
+     *     // e.g: [ switch, move, swap ] + cmd + shift - f : echo "hello world"
+     *     result.mode_list = parse_list(parser);
+     *     found_mode = 1;
+     * } else if(parser_match(parser, Token_Mode)) {
+     *     // NOTE(koekeishiya): single mode
+     *     result.mode_list = parse_mode(parser);
+     *     found_mode = 1;
+     * } else {
+     *     // NOTE(koekeishiya): no mode, add to default
+     *     found_mode = 0;
+     * }
+     *
+     * if(found_mode) {
+     *     if(!parser_match(parser, Token_Plus)) {
+     *         fprintf(stderr, "(#%d:%d) expected '+', but got '%.*s'\n",
+     *                 parser->current_token.line, parser->current_token.cursor,
+     *                 parser->current_token.length, parser->current_token.text);
+     *         parser->error = true;
+     *         return NULL;
+     *     }
+     * }
+     * */
+
+    if(parser_match(parser, Token_Modifier)) {
+        hotkey->flags = parse_modifier(parser);
+        if(parser->error) {
+            return NULL;
+        }
+        found_modifier = 1;
+    } else {
+        hotkey->flags = found_modifier = 0;
+    }
+
+    if(found_modifier) {
+        if(!parser_match(parser, Token_Dash)) {
+            fprintf(stderr, "(#%d:%d) expected '-', but got '%.*s'\n",
+                    parser->current_token.line, parser->current_token.cursor,
+                    parser->current_token.length, parser->current_token.text);
+            parser->error = true;
+            return NULL;
+        }
+    }
+
+    if(parser_match(parser, Token_Key)) {
+        hotkey->key = parse_key(parser);
+    } else if(parser_match(parser, Token_Key_Hex)) {
+        hotkey->key = parse_key_hex(parser);
+    } else if(parser_match(parser, Token_Literal)) {
+        hotkey->key = parse_key_literal(parser);
+    } else {
+        fprintf(stderr, "(#%d:%d) expected key-literal, but got '%.*s'\n",
+                parser->current_token.line, parser->current_token.cursor,
+                parser->current_token.length, parser->current_token.text);
+        parser->error = true;
+        return NULL;
+    }
+
+    if(parser_match(parser, Token_Arrow)) {
+        hotkey->flags |= Hotkey_Flag_Passthrough;
+    }
+
+    if(parser_match(parser, Token_Command)) {
+        hotkey->command = parse_command(parser);
+    } else {
+        fprintf(stderr, "(#%d:%d) expected ':' followed by command, but got '%.*s'\n",
+                parser->current_token.line, parser->current_token.cursor,
+                parser->current_token.length, parser->current_token.text);
+        parser->error = true;
+        return NULL;
+    }
+
+    printf("}\n");
+
+    result.hotkey = hotkey;
+    return result;
 }
 
-internal void
-ParseCommand(struct tokenizer *Tokenizer, struct hotkey *Hotkey)
+void parse_config(struct parser *parser, struct table *mode_map)
 {
-    struct token Command = GetToken(Tokenizer);
-    switch(Command.Type)
-    {
-        case Token_Passthrough:
-        {
-            AddFlags(Hotkey, Hotkey_Flag_Passthrough);
-            printf("Token_Passthrough: %.*s\n", Command.Length, Command.Text);
-            ParseCommand(Tokenizer, Hotkey);
-        } break;
-        case Token_Negate:
-        {
-            Hotkey->Type = Hotkey_Exclude;
-            printf("Token_Negate: %.*s\n", Command.Length, Command.Text);
-            ParseCommand(Tokenizer, Hotkey);
-        } break;
-        case Token_List:
-        {
-            printf("Token_List: [\n");
-            Hotkey->App = AllocAndCopyList(Command.Text, Command.Length);
-            if(Hotkey->Type == Hotkey_Default)
-                Hotkey->Type = Hotkey_Include;
-
-            char **List = Hotkey->App;
-            while(*List)
-            {
-                printf("    %s\n", *List++);
+    struct parse_result result;
+    while(!parser_eof(parser)) {
+        if((parser_check(parser, Token_Modifier)) ||
+           (parser_check(parser, Token_Literal)) ||
+           (parser_check(parser, Token_Key_Hex)) ||
+           (parser_check(parser, Token_Key))) {
+            result = parse_hotkey(parser);
+            if(parser->error) {
+                // TODO(koekeishiya): implement free_modes
+                free_hotkeys(mode_map);
+                return;
             }
-            printf("]\n");
 
-            ParseCommand(Tokenizer, Hotkey);
-        } break;
-        case Token_Command:
-        {
-            StripTrailingWhiteSpace(&Command);
-            Hotkey->Command = AllocAndCopyString(Command.Text, Command.Length);
-            AppendHotkey(Hotkey);
-            printf("Token_Command: %s\n", Hotkey->Command);
-        } break;
-        default:
-        {
-            Error("Line#%d: Expected token of type 'Token_Command' after symbols!\n", Tokenizer->Line);
-        } break;
-    }
-}
-
-internal inline void
-SetHotkeyMode(struct hotkey *Hotkey, char *Modifier)
-{
-    if(Hotkey->Mode)
-        free(Hotkey->Mode);
-
-    Hotkey->Mode = strdup(Modifier);
-}
-
-internal void
-AddHotkeyModifier(char *Mod, int Length, struct hotkey *Hotkey)
-{
-    char *Modifier = AllocAndCopyString(Mod, Length);
-    printf("Token_Modifier: %s\n", Modifier);
-
-    if     (StringsAreEqual(Modifier, "cmd"))    AddFlags(Hotkey, Hotkey_Flag_Cmd);
-    else if(StringsAreEqual(Modifier, "lcmd"))   AddFlags(Hotkey, Hotkey_Flag_LCmd);
-    else if(StringsAreEqual(Modifier, "rcmd"))   AddFlags(Hotkey, Hotkey_Flag_RCmd);
-    else if(StringsAreEqual(Modifier, "alt"))    AddFlags(Hotkey, Hotkey_Flag_Alt);
-    else if(StringsAreEqual(Modifier, "lalt"))   AddFlags(Hotkey, Hotkey_Flag_LAlt);
-    else if(StringsAreEqual(Modifier, "ralt"))   AddFlags(Hotkey, Hotkey_Flag_RAlt);
-    else if(StringsAreEqual(Modifier, "shift"))  AddFlags(Hotkey, Hotkey_Flag_Shift);
-    else if(StringsAreEqual(Modifier, "lshift")) AddFlags(Hotkey, Hotkey_Flag_LShift);
-    else if(StringsAreEqual(Modifier, "rshift")) AddFlags(Hotkey, Hotkey_Flag_RShift);
-    else if(StringsAreEqual(Modifier, "ctrl"))   AddFlags(Hotkey, Hotkey_Flag_Control);
-    else if(StringsAreEqual(Modifier, "lctrl"))  AddFlags(Hotkey, Hotkey_Flag_LControl);
-    else if(StringsAreEqual(Modifier, "rctrl"))  AddFlags(Hotkey, Hotkey_Flag_RControl);
-    else                                         SetHotkeyMode(Hotkey, Modifier);
-
-    free(Modifier);
-}
-
-internal void
-ParseKeyHexadecimal(struct tokenizer *Tokenizer, struct token *Token,
-                    struct hotkey *Hotkey, bool ExpectCommand)
-{
-    char *Temp = AllocAndCopyString(Token->Text, Token->Length);
-    Hotkey->Value = HexToInt(Temp);
-    free(Temp);
-
-    if(ExpectCommand)
-    {
-        AddFlags(Hotkey, Hotkey_Flag_Literal);
-        ParseCommand(Tokenizer, Hotkey);
-    }
-}
-
-internal void
-ParseKeyLiteral(struct tokenizer *Tokenizer, struct token *Token,
-                struct hotkey *Hotkey, bool ExpectCommand)
-{
-    char *Temp = AllocAndCopyString(Token->Text, Token->Length);
-    bool Result = false;
-
-    if(Token->Length > 1)
-    {
-        if(StringPrefix(Temp, MOUSE_BUTTON_PREFIX))
-        {
-            Result = OtherMouseButtonFromString(Temp + MOUSE_BUTTON_PREFIX_LENGTH, Hotkey);
-        }
-        else
-        {
-            Result = LayoutIndependentKeycode(Temp, Hotkey);
-        }
-    }
-    else
-    {
-        Result = KeycodeFromChar(Temp[0], Hotkey);
-    }
-
-    if(Result && ExpectCommand)
-    {
-        AddFlags(Hotkey, Hotkey_Flag_Literal);
-        ParseCommand(Tokenizer, Hotkey);
-    }
-    else if(!Result)
-    {
-        Error("Line#%d: Invalid format for key literal: %.*s\n", Tokenizer->Line, Token->Length, Token->Text);
-    }
-
-    free(Temp);
-}
-
-internal void
-ParseKeySym(struct tokenizer *Tokenizer, struct token *Token,
-            struct hotkey *Hotkey, bool ExpectCommand)
-{
-    AddHotkeyModifier(Token->Text, Token->Length, Hotkey);
-
-    char *At = Tokenizer->At;
-    struct token Symbol = GetToken(Tokenizer);
-    switch(Symbol.Type)
-    {
-        case Token_Plus:
-        {
-            struct token Symbol = GetToken(Tokenizer);
-            ParseKeySym(Tokenizer, &Symbol, Hotkey, ExpectCommand);
-        } break;
-        case Token_Hex:
-        {
-            printf("Token_Hex: %.*s\n", Symbol.Length, Symbol.Text);
-            ParseKeyHexadecimal(Tokenizer, &Symbol, Hotkey, ExpectCommand);
-        } break;
-        case Token_Literal:
-        {
-            printf("Token_Literal: %.*s\n", Symbol.Length, Symbol.Text);
-            ParseKeyLiteral(Tokenizer, &Symbol, Hotkey, ExpectCommand);
-        } break;
-        default:
-        {
-            if(ExpectCommand)
-            {
-                Tokenizer->At = At;
-                ParseCommand(Tokenizer, Hotkey);
-            }
-            else
-            {
-                Error("Line#%d: Invalid format for keysym: %.*s\n", Tokenizer->Line, Symbol.Length, Symbol.Text);
-            }
-        } break;
-    }
-}
-
-internal void
-ParseKhdModeActivate(struct tokenizer *Tokenizer)
-{
-    struct token TokenMode = GetToken(Tokenizer);
-    char *Mode = AllocAndCopyString(TokenMode.Text, TokenMode.Length);
-    ActivateMode(Mode);
-
-    free(Mode);
-}
-
-internal void
-ParseKhdModeProperties(struct token *TokenMode, struct tokenizer *Tokenizer)
-{
-    char *Mode = AllocAndCopyString(TokenMode->Text, TokenMode->Length);
-    struct mode *BindingMode = GetBindingMode(Mode);
-    if(!BindingMode)
-        BindingMode = CreateBindingMode(Mode);
-
-    struct token Token = GetToken(Tokenizer);
-    if(TokenEquals(Token, "prefix"))
-    {
-        struct token Token = GetToken(Tokenizer);
-        if(TokenEquals(Token, "on"))
-        {
-            BindingMode->Prefix = true;
-        }
-        else if(TokenEquals(Token, "off"))
-        {
-            BindingMode->Prefix = false;
-        }
-
-        printf("Prefix State: %d\n", BindingMode->Prefix);
-    }
-    else if(TokenEquals(Token, "timeout"))
-    {
-        struct token Token = GetToken(Tokenizer);
-        switch(Token.Type)
-        {
-            case Token_Digit:
-            {
-                char *Temp = AllocAndCopyString(Token.Text, Token.Length);
-                BindingMode->Timeout = StringToDouble(Temp);
-                printf("Prefix Timeout: %f\n", BindingMode->Timeout);
-                free(Temp);
-            } break;
-            default:
-            {
-                Error("Line#%d: Expected token of type 'Token_Digit': %.*s\n", Tokenizer->Line, Token.Length, Token.Text);
-            };
-        }
-    }
-    else if(TokenEquals(Token, "on_enter"))
-    {
-        struct token Token = ReadTilEndOfLine(Tokenizer);
-        BindingMode->OnEnterCommand = AllocAndCopyString(Token.Text, Token.Length);
-        printf("Prefix OnEnterCommand: %s\n", BindingMode->OnEnterCommand);
-    }
-    else if(TokenEquals(Token, "restore"))
-    {
-        struct token Token = GetToken(Tokenizer);
-        BindingMode->Restore = AllocAndCopyString(Token.Text, Token.Length);
-        printf("Prefix Restore: %s\n", BindingMode->Restore);
-    }
-
-    free(Mode);
-}
-
-internal void
-ParseKhdVoidUnlistedBind(struct tokenizer *Tokenizer)
-{
-    struct token Token = GetToken(Tokenizer);
-    if(TokenEquals(Token, "on"))
-    {
-        ConfigFlags |= Config_Void_Bind;
-    }
-    else if(TokenEquals(Token, "off"))
-    {
-        ConfigFlags &= ~Config_Void_Bind;
-    }
-    else
-    {
-        Error("Line#%d: Unexpected token '%.*s'\n", Tokenizer->Line, Token.Length, Token.Text);
-    }
-}
-
-internal void
-ParseKhdModTriggerTimeout(struct tokenizer *Tokenizer)
-{
-    struct token Token = GetToken(Tokenizer);
-    switch(Token.Type)
-    {
-        case Token_Digit:
-        {
-            char *Temp = AllocAndCopyString(Token.Text, Token.Length);
-            ModifierState.Timeout = StringToDouble(Temp);
-            free(Temp);
-        } break;
-        default:
-        {
-            Error("Line#%d: Unexpected token '%.*s'\n", Tokenizer->Line, Token.Length, Token.Text);
-        } break;
-    }
-}
-
-internal void
-ParseKhdMode(struct tokenizer *Tokenizer)
-{
-    struct token Token = GetToken(Tokenizer);
-    switch(Token.Type)
-    {
-        case Token_EndOfStream:
-        {
-            Error("Line#%d: Unexpected end of stream while parsing khd command!\n", Tokenizer->Line);
-        } break;
-        case Token_Identifier:
-        {
-            if(TokenEquals(Token, "activate"))
-            {
-                ParseKhdModeActivate(Tokenizer);
-            }
-            else
-            {
-                ParseKhdModeProperties(&Token, Tokenizer);
-            }
-        } break;
-        default:
-        {
-            Error("Line#%d: Unexpected token '%.*s'\n", Tokenizer->Line, Token.Length, Token.Text);
-        } break;
-    }
-}
-
-internal void
-ParseKhd(struct tokenizer *Tokenizer, int SockFD)
-{
-    struct token Token = GetToken(Tokenizer);
-    switch(Token.Type)
-    {
-        case Token_EndOfStream:
-        {
-            Error("Line#%d: Unexpected end of stream while parsing khd command!\n", Tokenizer->Line);
-        } break;
-        case Token_Identifier:
-        {
-            if(TokenEquals(Token, "reload"))
-            {
-                ReloadConfig();
-            }
-            else if(TokenEquals(Token, "void_unlisted_bind"))
-            {
-                ParseKhdVoidUnlistedBind(Tokenizer);
-            }
-            else if(TokenEquals(Token, "mod_trigger_timeout"))
-            {
-                ParseKhdModTriggerTimeout(Tokenizer);
-            }
-            else if(TokenEquals(Token, "mode"))
-            {
-                ParseKhdMode(Tokenizer);
-            }
-            else if(TokenEquals(Token, "print"))
-            {
-                struct token Query = GetToken(Tokenizer);
-                if(TokenEquals(Query, "mode"))
-                {
-                    if((ActiveBindingMode) &&
-                       (ActiveBindingMode->Name))
-                    {
-                        WriteToSocket(ActiveBindingMode->Name, SockFD);
-                    }
-                    else
-                    {
-                        WriteToSocket("<Unknown Mode>", SockFD);
-                    }
+            for(int i = 0; i < result->mode_count; ++i) {
+                struct mode *mode = table_find(mode_map, result->mode_list[i]);
+                if(!mode) {
+                    mode = create_mode(result->mode_list[i]);
+                    table_add(mode_map, mode->name, mode);
                 }
+                table_add(&mode->hotkey_map, result->hotkey, result->hotkey);
             }
-        } break;
-        default:
-        {
-            Error("Line#%d: Unexpected token '%.*s'\n", Tokenizer->Line, Token.Length, Token.Text);
-        } break;
-    }
-}
-
-void ParseKhdEmit(char *Contents, int SockFD)
-{
-    struct tokenizer Tokenizer = { Contents };
-    ParseKhd(&Tokenizer, SockFD);
-}
-
-void ParseKeySymEmit(char *KeySym, struct hotkey *Hotkey)
-{
-    struct tokenizer Tokenizer = { KeySym };
-    struct token Token = GetToken(&Tokenizer);
-    switch(Token.Type)
-    {
-        case Token_Hex: { ParseKeyHexadecimal(&Tokenizer, &Token, Hotkey, false); } break;
-        case Token_Literal: { ParseKeyLiteral(&Tokenizer, &Token, Hotkey, false); } break;
-        case Token_Identifier: { ParseKeySym(&Tokenizer, &Token, Hotkey, false); } break;
-        default: { Error("Invalid format for keysym: %.*s\n", Token.Length, Token.Text); } break;
-    }
-}
-
-void ParseConfig(char *Contents)
-{
-    struct tokenizer Tokenizer = { Contents, 0 };
-    bool Parsing = true;
-    while(Parsing)
-    {
-        struct token Token = GetToken(&Tokenizer);
-        switch(Token.Type)
-        {
-            case Token_EndOfStream:
-            {
-                Parsing = false;
-            } break;
-            case Token_Comment:
-            {
-                printf("Token_Comment: %.*s\n", Token.Length, Token.Text);
-            } break;
-            case Token_Hex:
-            {
-                printf("Token_Hex: %.*s\n", Token.Length, Token.Text);
-                ParseKeyHexadecimal(&Tokenizer, &Token, AllocHotkey(), true);
-            } break;
-            case Token_Literal:
-            {
-                printf("Token_Literal: %.*s\n", Token.Length, Token.Text);
-                ParseKeyLiteral(&Tokenizer, &Token, AllocHotkey(), true);
-            } break;
-            case Token_Identifier:
-            {
-                if(TokenEquals(Token, "khd"))
-                {
-                    ParseKhd(&Tokenizer, 0);
-                }
-                else
-                {
-                    ParseKeySym(&Tokenizer, &Token, AllocHotkey(), true);
-                }
-            } break;
-            default:
-            {
-                printf("%d: %.*s\n", Token.Type, Token.Length, Token.Text);
-            } break;
+        } else {
+            fprintf(stderr, "(#%d:%d) expected modifier or key-literal, but got '%.*s'\n",
+                    parser->current_token.line, parser->current_token.cursor,
+                    parser->current_token.length, parser->current_token.text);
+            parser->error = true;
+            return;
         }
     }
-
-    printf("Total lines#%d\n", Tokenizer.Line);
-    free(Contents);
 }
 
-char *ReadFile(const char *File)
+struct token
+parser_peek(struct parser *parser)
 {
-    char *Contents = NULL;
-    FILE *Descriptor = fopen(File, "r");
+    return parser->current_token;
+}
 
-    if(Descriptor)
-    {
-        fseek(Descriptor, 0, SEEK_END);
-        unsigned Length = ftell(Descriptor);
-        fseek(Descriptor, 0, SEEK_SET);
+struct token
+parser_previous(struct parser *parser)
+{
+    return parser->previous_token;
+}
 
-        Contents = (char *) malloc(Length + 1);
-        fread(Contents, Length, 1, Descriptor);
-        Contents[Length] = '\0';
+bool parser_eof(struct parser *parser)
+{
+    struct token token = parser_peek(parser);
+    return token.type == Token_EndOfStream;
+}
 
-        fclose(Descriptor);
+struct token
+parser_advance(struct parser *parser)
+{
+    if(!parser_eof(parser)) {
+        parser->previous_token = parser->current_token;
+        parser->current_token = get_token(&parser->tokenizer);
     }
+    return parser_previous(parser);
+}
 
-    return Contents;
+bool parser_check(struct parser *parser, enum token_type type)
+{
+    if(parser_eof(parser)) return 0;
+    struct token token = parser_peek(parser);
+    return token.type == type;
+}
+
+bool parser_match(struct parser *parser, enum token_type type)
+{
+    if(parser_check(parser, type)) {
+        parser_advance(parser);
+        return true;
+    }
+    return false;
+}
+
+bool parser_init(struct parser *parser, char *file)
+{
+    memset(parser, 0, sizeof(struct parser));
+    char *buffer = read_file(file);
+    if(buffer) {
+        tokenizer_init(&parser->tokenizer, buffer);
+        parser_advance(parser);
+        return true;
+    }
+    return false;
+}
+
+void parser_destroy(struct parser *parser)
+{
+    free(parser->tokenizer.buffer);
 }

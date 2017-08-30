@@ -1,11 +1,35 @@
 #ifndef KHD_PARSE_H
 #define KHD_PARSE_H
 
-char *ReadFile(const char *File);
-void ParseConfig(char *Contents);
-void ParseKhdEmit(char *Contents, int SockFD);
+#include "tokenize.h"
+#include <stdbool.h>
+
+struct parser
+{
+    struct token previous_token;
+    struct token current_token;
+    struct tokenizer tokenizer;
+    bool error;
+};
 
 struct hotkey;
-void ParseKeySymEmit(char *KeySym, struct hotkey *Hotkey);
+struct parse_result
+{
+    struct hotkey *hotkey;
+    char **mode_list;
+    int mode_count;
+};
+
+struct table;
+void parse_config(struct parser *parser, struct table *hotkey_map);
+
+struct token parser_peek(struct parser *parser);
+struct token parser_previous(struct parser *parser);
+bool parser_eof(struct parser *parser);
+struct token parser_advance(struct parser *parser);
+bool parser_check(struct parser *parser, enum token_type type);
+bool parser_match(struct parser *parser, enum token_type type);
+bool parser_init(struct parser *parser, char *file);
+void parser_destroy(struct parser *parser);
 
 #endif

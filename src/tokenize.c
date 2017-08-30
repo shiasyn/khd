@@ -1,212 +1,183 @@
 #include "tokenize.h"
 #define internal static
 
-internal inline void
-EatAllWhiteSpace(struct tokenizer *Tokenizer)
-{
-    while((Tokenizer->At[0]) &&
-          (IsWhiteSpace(Tokenizer->At[0])))
-    {
-        if(IsEndOfLine(Tokenizer->At[0]))
-            ++Tokenizer->Line;
+#include <ctype.h>
 
-        ++Tokenizer->At;
-    }
-}
-
-bool RequireToken(struct tokenizer *Tokenizer, enum token_type DesiredType)
+int token_equals(struct token token, const char *match)
 {
-    struct token Token = GetToken(Tokenizer);
-    bool Result = Token.Type == DesiredType;
-    return Result;
-}
-
-bool TokenEquals(struct token Token, const char *Match)
-{
-    const char *At = Match;
-    for(int Index = 0;
-        Index < Token.Length;
-        ++Index, ++At)
-    {
-        if((*At == 0) ||
-           (Token.Text[Index] != *At))
+    const char *at = match;
+    for(int i = 0; i < token.length; ++i, ++at) {
+        if((*at == 0) || (token.text[i] != *at)) {
             return false;
+        }
+    }
+    return (*at == 0);
+}
+
+internal void
+advance(struct tokenizer *tokenizer)
+{
+    if(*tokenizer->at == '\n') {
+        tokenizer->cursor = 0;
+        ++tokenizer->line;
+    }
+    ++tokenizer->cursor;
+    ++tokenizer->at;
+}
+
+internal void
+eat_whitespace(struct tokenizer *tokenizer)
+{
+    while(*tokenizer->at && isspace(*tokenizer->at)) {
+        advance(tokenizer);
+    }
+}
+
+internal void
+eat_comment(struct tokenizer *tokenizer)
+{
+    while(*tokenizer->at && *tokenizer->at != '\n') {
+        advance(tokenizer);
+    }
+}
+
+internal void
+eat_command(struct tokenizer *tokenizer)
+{
+    while(*tokenizer->at && *tokenizer->at != '\n') {
+        if(*tokenizer->at == '\\') {
+            advance(tokenizer);
+        }
+        advance(tokenizer);
+    }
+}
+
+internal void
+eat_hex(struct tokenizer *tokenizer)
+{
+    while((*tokenizer->at) &&
+          ((isdigit(*tokenizer->at)) ||
+           (*tokenizer->at >= 'A' && *tokenizer->at <= 'F'))) {
+        advance(tokenizer);
+    }
+}
+
+// NOTE(koekeishiya): production rules:
+// identifier = <char><char>   | <char><number>
+// number     = <digit><digit> | <digit>
+// digit      = 0..9
+internal void
+eat_identifier(struct tokenizer *tokenizer)
+{
+    while((*tokenizer->at) && isalpha(*tokenizer->at)) {
+        advance(tokenizer);
     }
 
-    bool Result = (*At == 0);
-    return Result;
+    while((*tokenizer->at) && isdigit(*tokenizer->at)) {
+        advance(tokenizer);
+    }
+}
+
+internal enum token_type
+resolve_identifier_type(struct token token)
+{
+    if(token.length == 1) {
+        return Token_Key;
+    }
+
+    for(int i = 0; i < array_count(modifier_flags_str); ++i) {
+        if(token_equals(token, modifier_flags_str[i])) {
+            return Token_Modifier;
+        }
+    }
+
+    for(int i = 0; i < array_count(literal_keycode_str); ++i) {
+        if(token_equals(token, literal_keycode_str[i])) {
+            return Token_Literal;
+        }
+    }
+
+    return Token_Unknown;
 }
 
 struct token
-ReadTilEndOfLine(struct tokenizer *Tokenizer)
+peek_token(struct tokenizer tokenizer)
 {
-    struct token Token = {};
-    EatAllWhiteSpace(Tokenizer);
-    Token.Text = Tokenizer->At;
-
-    while((Tokenizer->At[0]) &&
-          (!IsEndOfLine(Tokenizer->At[0])))
-    {
-        ++Tokenizer->At;
-    }
-
-    Token.Type = Token_Unknown;
-    Token.Length = Tokenizer->At - Token.Text;
-    return Token;
+    return get_token(&tokenizer);
 }
 
 struct token
-GetToken(struct tokenizer *Tokenizer)
+get_token(struct tokenizer *tokenizer)
 {
-    EatAllWhiteSpace(Tokenizer);
+    struct token token;
+    char c;
 
-    struct token Token = {};
-    Token.Length = 1;
-    Token.Text = Tokenizer->At;
+    eat_whitespace(tokenizer);
 
-    char C = Tokenizer->At[0];
-    ++Tokenizer->At;
+    token.length = 1;
+    token.text = tokenizer->at;
+    token.line = tokenizer->line;
+    token.cursor = tokenizer->cursor;
+    c = *token.text;
+    advance(tokenizer);
 
-    switch(C)
+    switch(c)
     {
-        case '\0': { Token.Type = Token_EndOfStream; } break;
-        case '{': { Token.Type = Token_OpenBrace; } break;
-        case '}': { Token.Type = Token_CloseBrace; } break;
-        case '+': { Token.Type = Token_Plus; } break;
-        case '!': { Token.Type = Token_Negate; } break;
-        case '[':
+        case '\0': { token.type = Token_EndOfStream; } break;
+        case '+':  { token.type = Token_Plus;        } break;
+        case '-':
         {
-            Token.Text = Tokenizer->At;
-
-            while((Tokenizer->At[0]) &&
-                  (Tokenizer->At[0] != ']'))
-            {
-                ++Tokenizer->At;
+            if(*tokenizer->at && *tokenizer->at == '>') {
+                advance(tokenizer);
+                token.length = tokenizer->at - token.text;
+                token.type = Token_Arrow;
+            } else {
+                token.type = Token_Dash;
             }
-
-            Token.Type = Token_List;
-            Token.Length = Tokenizer->At - Token.Text;
-
-            if(Tokenizer->At[0] == ']')
-                ++Tokenizer->At;
         } break;
         case ':':
         {
-            EatAllWhiteSpace(Tokenizer);
-            Token.Text = Tokenizer->At;
+            eat_whitespace(tokenizer);
 
-            while((Tokenizer->At[0]) &&
-                  (!IsEndOfLine(Tokenizer->At[0])))
-            {
-                if(Tokenizer->At[0] == '\\')
-                {
-                    ++Tokenizer->At;
-                    if(IsEndOfLine(Tokenizer->At[0]))
-                        ++Tokenizer->Line;
-                }
+            token.text = tokenizer->at;
+            token.line = tokenizer->line;
+            token.cursor = tokenizer->cursor;
 
-                ++Tokenizer->At;
-            }
-
-            Token.Type = Token_Command;
-            Token.Length = Tokenizer->At - Token.Text;
+            eat_command(tokenizer);
+            token.length = tokenizer->at - token.text;
+            token.type = Token_Command;
         } break;
         case '#':
         {
-            Token.Text = Tokenizer->At;
-            while((Tokenizer->At[0]) &&
-                  (!IsEndOfLine(Tokenizer->At[0])))
-                ++Tokenizer->At;
-
-            Token.Type = Token_Comment;
-            Token.Length = Tokenizer->At - Token.Text;
-        } break;
-        case '-':
-        {
-            if(Tokenizer->At[0])
-            {
-                if(Tokenizer->At[0] == '>')
-                {
-                    ++Tokenizer->At;
-                    Token.Type = Token_Passthrough;
-                    Token.Length = Tokenizer->At - Token.Text;
-                }
-                else
-                {
-                    EatAllWhiteSpace(Tokenizer);
-                    Token.Text = Tokenizer->At;
-                    if((IsAlpha(Tokenizer->At[0])) ||
-                       (IsNumeric(Tokenizer->At[0])))
-                    {
-                        ++Tokenizer->At;
-                        if((Tokenizer->At[0]) &&
-                           (Tokenizer->At[0] == 'x' ||
-                            Tokenizer->At[0] == 'X'))
-                        {
-                            ++Tokenizer->At;
-                            while((Tokenizer->At[0]) &&
-                                  (IsHexadecimal(Tokenizer->At[0])))
-                                ++Tokenizer->At;
-
-                            Token.Type = Token_Hex;
-                            Token.Length = Tokenizer->At - Token.Text;
-                        }
-                        else
-                        {
-                            while((Tokenizer->At[0]) &&
-                                  (IsAlpha(Tokenizer->At[0]) ||
-                                  (IsNumeric(Tokenizer->At[0]))))
-                                ++Tokenizer->At;
-
-                            Token.Type = Token_Literal;
-                            Token.Length = Tokenizer->At - Token.Text;
-                        }
-                    }
-                }
-            }
+            eat_comment(tokenizer);
+            token = get_token(tokenizer);
         } break;
         default:
         {
-            if(IsAlpha(C))
-            {
-                while((IsAlpha(Tokenizer->At[0])) ||
-                      (IsNumeric(Tokenizer->At[0])))
-                    ++Tokenizer->At;
-
-                Token.Type = Token_Identifier;
-                Token.Length = Tokenizer->At - Token.Text;
-            }
-            else if(IsNumeric(C))
-            {
-                if((C == '0') &&
-                   (Tokenizer->At[0] == 'x' ||
-                    Tokenizer->At[0] == 'X'))
-                {
-                    ++Tokenizer->At;
-                    while((Tokenizer->At[0]) &&
-                          (IsHexadecimal(Tokenizer->At[0])))
-                        ++Tokenizer->At;
-
-                    Token.Type = Token_Hex;
-                    Token.Length = Tokenizer->At - Token.Text;
-                }
-                else
-                {
-                    while((Tokenizer->At[0]) &&
-                          (IsNumeric(Tokenizer->At[0]) ||
-                           IsDot(Tokenizer->At[0])))
-                        ++Tokenizer->At;
-
-                    Token.Type = Token_Digit;
-                    Token.Length = Tokenizer->At - Token.Text;
-                }
-            }
-            else
-            {
-                Token.Type = Token_Unknown;
+            if(c == '0' && *tokenizer->at == 'x') {
+                advance(tokenizer);
+                eat_hex(tokenizer);
+                token.length = tokenizer->at - token.text;
+                token.type = Token_Key_Hex;
+            } else if(isdigit(c)) {
+                token.type = Token_Key;
+            } else if(isalpha(c)) {
+                eat_identifier(tokenizer);
+                token.length = tokenizer->at - token.text;
+                token.type = resolve_identifier_type(token);
+            } else {
+                token.type = Token_Unknown;
             }
         } break;
     }
 
-    return Token;
+    return token;
+}
+
+void tokenizer_init(struct tokenizer *tokenizer, char *buffer)
+{
+    tokenizer->buffer = buffer;
+    tokenizer->at = buffer;
+    tokenizer->line = 1;
+    tokenizer->cursor = 1;
 }

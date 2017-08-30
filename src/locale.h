@@ -1,12 +1,8 @@
 #ifndef KHD_LOCALE_H
 #define KHD_LOCALE_H
 
-struct hotkey;
-bool KeycodeFromChar(char Key, struct hotkey *Hotkey);
-bool OtherMouseButtonFromString(char *Temp, struct hotkey *Hotkey);
-bool IsSystemDefinedKeycode(uint16_t Keycode);
-bool LayoutIndependentKeycode(char *Key, struct hotkey *Hotkey);
-bool StringsAreEqual(const char *A, const char *B);
-bool StringPrefix(const char *String, const char *Prefix);
+#include <stdint.h>
+
+uint32_t keycode_from_char(char key);
 
 #endif
