@@ -161,38 +161,32 @@ parse_hotkey(struct parser *parser)
     struct parse_result result = {};
 
     struct hotkey *hotkey = malloc(sizeof(struct hotkey));
-    int found_modifier;
+    int found_mode, found_modifier;
 
     printf("(#%d) hotkey :: {\n", parser->current_token.line);
 
-    /*
-     * // TODO(koekeishiya): implement these functions and required changes to lexer
-     *
-     * int found_mode;
-     * if(parser_match(parser, Token_Open_Bracket)) {
-     *     // NOTE(koekeishiya): comma separated list
-     *     // e.g: [ switch, move, swap ] + cmd + shift - f : echo "hello world"
-     *     result.mode_list = parse_list(parser);
-     *     found_mode = 1;
-     * } else if(parser_match(parser, Token_Mode)) {
-     *     // NOTE(koekeishiya): single mode
-     *     result.mode_list = parse_mode(parser);
-     *     found_mode = 1;
-     * } else {
-     *     // NOTE(koekeishiya): no mode, add to default
-     *     found_mode = 0;
-     * }
-     *
-     * if(found_mode) {
-     *     if(!parser_match(parser, Token_Plus)) {
-     *         fprintf(stderr, "(#%d:%d) expected '+', but got '%.*s'\n",
-     *                 parser->current_token.line, parser->current_token.cursor,
-     *                 parser->current_token.length, parser->current_token.text);
-     *         parser->error = true;
-     *         return NULL;
-     *     }
-     * }
-     * */
+    if(parser_match(parser, Token_Open_Bracket)) {
+        // TODO(koekeishiya): comma separated list; e.g: [ switch, move, swap ]
+        result.mode_list = parse_list(parser);
+        found_mode = 1;
+    } else if(parser_match(parser, Token_Mode)) {
+        // TODO(koekeishiya): single mode
+        result.mode_list = parse_mode(parser);
+        found_mode = 1;
+    } else {
+        // TODO(koekeishiya): no mode, add to default
+        found_mode = 0;
+    }
+
+    if(found_mode) {
+        if(!parser_match(parser, Token_Plus)) {
+            fprintf(stderr, "(#%d:%d) expected '+', but got '%.*s'\n",
+                    parser->current_token.line, parser->current_token.cursor,
+                    parser->current_token.length, parser->current_token.text);
+            parser->error = true;
+            return NULL;
+        }
+    }
 
     if(parser_match(parser, Token_Modifier)) {
         hotkey->flags = parse_modifier(parser);

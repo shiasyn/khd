@@ -97,7 +97,7 @@ resolve_identifier_type(struct token token)
         }
     }
 
-    return Token_Unknown;
+    return Token_Mode;
 }
 
 struct token
@@ -123,8 +123,11 @@ get_token(struct tokenizer *tokenizer)
 
     switch(c)
     {
-        case '\0': { token.type = Token_EndOfStream; } break;
-        case '+':  { token.type = Token_Plus;        } break;
+        case '\0': { token.type = Token_EndOfStream;   } break;
+        case ',':  { token.type = Token_Comma;         } break;
+        case '[':  { token.type = Token_Open_Bracket;  } break;
+        case ']':  { token.type = Token_Close_Bracket; } break;
+        case '+':  { token.type = Token_Plus;          } break;
         case '-':
         {
             if(*tokenizer->at && *tokenizer->at == '>') {
