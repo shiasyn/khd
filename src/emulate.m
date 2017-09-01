@@ -2,6 +2,11 @@
 #include "hotkey.h"
 #include "locale.h"
 
+#include <AvailabilityMacros.h>
+#if MAC_OS_X_VERSION_MAX_ALLOWED < 101200
+#define NSEventTypeSystemDefined NSSystemDefined
+#endif
+
 void SendKeySequence(const char *Sequence)
 {
     CFStringRef SequenceRef = CFStringCreateWithCString(NULL, Sequence, kCFStringEncodingUTF8);
