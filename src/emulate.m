@@ -57,6 +57,8 @@ ClearModifierFlags(CGEventFlags Flags)
     Flags &= ~Event_Mask_LControl;
     Flags &= ~Event_Mask_RControl;
 
+    Flags &= ~Event_Mask_Fn;
+
     return Flags;
 }
 

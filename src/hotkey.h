@@ -41,6 +41,8 @@ enum osx_event_mask
     Event_Mask_Control = 0x00040000,
     Event_Mask_LControl = 0x00000001,
     Event_Mask_RControl = 0x00002000,
+
+    Event_Mask_Fn = kCGEventFlagMaskSecondaryFn,
 };
 
 enum hotkey_flag
@@ -66,6 +68,8 @@ enum hotkey_flag
     Hotkey_Flag_MouseButton = (1 << 14),
 
     Hotkey_Flag_SystemDefined = (1 << 15),
+
+    Hotkey_Flag_Fn = (1 << 16),
 };
 
 enum hotkey_type

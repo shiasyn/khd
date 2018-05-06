@@ -280,6 +280,9 @@ HotkeysAreEqual(struct hotkey *A, struct hotkey *B)
         if(HasFlags(A, Hotkey_Flag_MouseButton) != HasFlags(B, Hotkey_Flag_MouseButton))
             return false;
 
+        if(HasFlags(A, Hotkey_Flag_Fn) != HasFlags(B, Hotkey_Flag_Fn))
+            return false;
+
         if(!HasFlags(A, Hotkey_Flag_Literal))
         {
             return CompareCmdKey(A, B) &&
@@ -465,6 +468,11 @@ CreateHotkeyFromCGEvent(CGEventFlags Flags, uint32_t Value)
             AddFlags(&Eventkey, Hotkey_Flag_Control);
     }
 
+    if((Flags & Event_Mask_Fn) == Event_Mask_Fn)
+    {
+            AddFlags(&Eventkey, Hotkey_Flag_Fn);
+    }
+
     return Eventkey;
 }
 
@@ -500,6 +508,9 @@ CreateCGEventFlagsFromHotkeyFlags(uint32_t HotkeyFlags)
         EventFlags |= Event_Mask_LControl | Event_Mask_Control;
     else if(HotkeyFlags & Hotkey_Flag_RControl)
         EventFlags |= Event_Mask_RControl | Event_Mask_Control;
+
+    if(HotkeyFlags & Hotkey_Flag_Fn)
+        EventFlags |= Event_Mask_Fn;
 
     return EventFlags;
 }
@@ -591,5 +602,12 @@ void RefreshModifierState(CGEventFlags Flags, CGKeyCode Key)
             ModifierPressed(Hotkey_Flag_RControl);
         else
             ModifierReleased(Hotkey_Flag_RControl);
+    }
+    else if(Key == Modifier_Keycode_Fn)
+    {
+        if(Flags & Event_Mask_Fn)
+            ModifierPressed(Hotkey_Flag_Fn);
+        else
+            ModifierReleased(Hotkey_Flag_Fn);
     }
 }

@@ -276,6 +276,7 @@ AddHotkeyModifier(char *Mod, int Length, struct hotkey *Hotkey)
     else if(StringsAreEqual(Modifier, "ctrl"))   AddFlags(Hotkey, Hotkey_Flag_Control);
     else if(StringsAreEqual(Modifier, "lctrl"))  AddFlags(Hotkey, Hotkey_Flag_LControl);
     else if(StringsAreEqual(Modifier, "rctrl"))  AddFlags(Hotkey, Hotkey_Flag_RControl);
+    else if(StringsAreEqual(Modifier, "fn"))     AddFlags(Hotkey, Hotkey_Flag_Fn);
     else                                         SetHotkeyMode(Hotkey, Modifier);
 
     free(Modifier);
